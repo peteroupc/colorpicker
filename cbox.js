@@ -1,0 +1,841 @@
+/* This file is in the public domain. Peter O., 2012. http://upokecenter.dreamhosters.com 
+    Public domain dedication: http://creativecommons.org/publicdomain/zero/1.0/legalcode  */
+
+(function(){
+
+ var ColorSpace=subclass(Object,{
+  initialize:function(info,usealpha){
+  this.usealpha=usealpha;
+  this.info=info;
+  var faster=(navigator.userAgent.indexOf("Gecko/")>=0);
+  this.maxWidth=(faster ? 36 : 60)
+  this.maxHeight=(faster ? 36 : 60)
+  this.areas=[]
+  this.emptyArea=[0,0,0,0]
+  this.swatchWidth=Math.floor(this.maxWidth*1/3)
+  this.matrixWidth=Math.floor(this.maxWidth*(this.usealpha ? 80 : 85)/100)
+  this.matrixHeight=Math.floor(this.maxHeight*80/100)
+  this.setupdimensions()
+ },
+fromrgbcolor:function(c){
+ var ret=(typeof this.info.fromrgbcolor!="undefined" && this.info.fromrgbcolor) ? 
+   this.info.fromrgbcolor(c) : [0,0,0]
+ if(ret==c){ ret=[c[0],c[1],c[2]] }
+ ret[3]=(c[3]==null) ? 255 : c[3]
+ return ret
+},
+torgbcolor:function(c){
+ var ret=this.info.torgbcolor(c)
+ if(ret==c){ ret=[c[0],c[1],c[2]] }
+ ret[3]=(c[3]==null) ? 255 : c[3]
+ return ret
+},
+dimensions:function(){
+  return [this.maxWidth,this.maxHeight]
+},
+areadimensions:function(area){
+ var a=this.areas[area]
+ if(!a)return this.emptyArea
+ return a
+},
+setupdimensions:function(){
+ if(!(typeof this.info.fromrgbcolor!="undefined" && this.info.fromrgbcolor)){
+ if(!this.usealpha)this.areas[1]=[0,0,this.maxWidth,this.matrixHeight]
+ else this.areas[1]=[0,0,this.matrixWidth+
+                Math.floor((this.maxWidth-this.matrixWidth)/2),this.matrixHeight]
+ // side bar
+ this.areas[2]=[0,0,0,0]
+ // alpha bar
+  if(this.usealpha)this.areas[6]=[this.matrixWidth+
+                Math.floor((this.maxWidth-this.matrixWidth)/2),0,
+                Math.floor((this.maxWidth-this.matrixWidth)/2),
+               this.matrixHeight]
+ } else {
+ // color matrix
+ this.areas[1]=[0,0,this.matrixWidth,this.matrixHeight]
+ // side bar
+ if(this.usealpha)this.areas[2]=[this.matrixWidth,0,
+               Math.floor((this.maxWidth-this.matrixWidth)/2),
+               this.matrixHeight]
+ else this.areas[2]=[this.matrixWidth,0,
+                this.maxWidth-this.matrixWidth,
+               this.matrixHeight]
+ // alpha bar
+  if(this.usealpha)this.areas[6]=[this.matrixWidth+
+                Math.floor((this.maxWidth-this.matrixWidth)/2),0,
+                Math.floor((this.maxWidth-this.matrixWidth)/2),
+               this.matrixHeight]
+  }
+ // swatch
+ this.areas[3]=[0,this.matrixHeight,this.swatchWidth,
+               this.maxHeight-this.matrixHeight] 
+ // color value
+ this.areas[4]=[this.swatchWidth,
+               this.matrixHeight,
+               this.maxWidth-this.swatchWidth,
+               Math.floor((this.maxHeight-this.matrixHeight)/2)] 
+ // reset link
+ this.areas[5]=[this.swatchWidth,
+               this.matrixHeight+Math.floor((this.maxHeight-this.matrixHeight)/2),
+               this.maxWidth-this.swatchWidth,
+               Math.floor((this.maxHeight-this.matrixHeight)/2)] 
+},
+confinetoarea:function(area,xy){
+ var nxy=[xy[0],xy[1]]
+ var dims=this.areadimensions(area)
+ if(nxy[0]<dims[0])nxy[0]=dims[0]
+ if(nxy[0]>dims[0]+dims[2]-1)nxy[0]=dims[0]+dims[2]-1
+ if(nxy[1]<dims[1])nxy[1]=dims[1]
+ if(nxy[1]>dims[1]+dims[3]-1)nxy[1]=dims[1]+dims[3]-1
+ return nxy
+},
+getarea:function(x,y){
+ for(var i=1;i<this.areas.length;i++){
+  if(!this.areas[i])continue
+  var dims=this.areas[i];
+  if(x>=dims[0] && x<dims[0]+dims[2] &&
+      y>=dims[1] && y<dims[1]+dims[3]){
+   return i  
+  }
+ }
+ return this.areas.length;
+},
+rgbatorgb:function(rgba,shade){
+ if(rgba[3]<255){
+  var bgalpha=255-rgba[3]
+  return [
+   ((rgba[0]*rgba[3])+(shade*bgalpha))/255,
+   ((rgba[1]*rgba[3])+(shade*bgalpha))/255,
+   ((rgba[2]*rgba[3])+(shade*bgalpha))/255
+  ]
+ }
+ return rgba
+},
+getcolor:function(x,y,current){ // for display only
+ var area=this.getarea(x,y)
+ if(area==1){
+    var rgba=this.torgbcolor(this.changecolor(x,y,current))
+    rgba[3]=(current[3]==null) ? 255 : current[3]; return rgba
+ } else if(area==2){
+    var rgba=this.torgbcolor(this.changecolor(x,y,current))
+    rgba[3]=(current[3]==null) ? 255 : current[3]; return rgba
+ } else if(area==6){
+    var rgba=this.torgbcolor(this.changecolor(x,y,current))     
+    if(rgba[3]==255)return rgba
+    var dims=this.areadimensions(area)
+    var xx=Math.floor((x-dims[0])*2/dims[2])
+    var yy=Math.floor((y-dims[1])*2/dims[3])
+    return this.rgbatorgb(rgba,xx==yy ? 160 : 220)
+ } else if(area==3){ // swatch
+    var rgba=this.torgbcolor(current) 
+    if(rgba[3]==255)return rgba
+    var dims=this.areadimensions(area)
+    var xx=Math.floor((x-dims[0])*4/dims[2])
+    if(xx<2)
+      return [rgba[0],rgba[1],rgba[2],255] // plain color
+    else
+      xx-=2; // alpha color
+    var yy=Math.floor((y-dims[1])*2/dims[3])
+    return this.rgbatorgb(rgba,xx==yy ? 160 : 220)
+ } else {
+    return [255,255,255,255]
+ }
+},
+colortopos:function(current){
+ var ret=[]
+ var dims=this.areadimensions(1)
+ var dimsside=this.areadimensions(2)
+ var dimsalpha=this.areadimensions(6)
+ for(var i=0;i<this.info.maxes.length;i++){
+  var v=current[this.info.indexes[i]]
+  if(this.info.reversed[this.info.indexes[i]])v=this.info.maxes[this.info.indexes[i]]-v
+  v/=this.info.maxes[this.info.indexes[i]]
+  if(i==0)v=dims[0]+v*(dims[2]-1) // matrix X
+  if(i==1)v=dims[1]+v*(dims[3]-1) // matrix Y
+  if(i==2)v=dimsside[1]+v*(dimsside[3]-1) // side Y
+  ret[i]=v
+ }
+ ret[3]=dimsalpha[1]+(255-current[3])*(dimsalpha[3]-1)/255.0 // alpha side Y
+ return ret
+},
+changecolor:function(x,y,current){
+ var ret=[current[0],current[1],current[2],(current[3]==null) ? 255 : current[3]]
+ var info=this.info
+ var ci0=info.indexes[0]
+ var ci1=info.indexes[1]
+ var ci2=info.indexes[2]
+ var area=this.areas[1] // matrix
+ if(x>=area[0] && x<(area[0]+area[2]) &&
+    y>=area[1] && y<(area[1]+area[3])){
+   var h=((x-area[0])*info.maxes[ci0])/(area[2]-1);
+   var s=((y-area[1])*info.maxes[ci1])/(area[3]-1);
+   if(info.reversed[ci0])h=info.maxes[ci0]-h
+   if(info.reversed[ci1])s=info.maxes[ci1]-s
+   ret[ci0]=h
+   ret[ci1]=s
+   return ret
+ }
+ area=this.areas[2] // side
+ if(x>=area[0] && x<(area[0]+area[2]) &&
+    y>=area[1] && y<(area[1]+area[3])){
+   var lum=((y-area[1])*info.maxes[ci2]/(area[3]-1))
+   if(info.reversed[ci2])lum=info.maxes[ci2]-lum
+   ret[ci2]=lum
+   return ret
+ }
+ area=this.areadimensions(6) // alpha side
+ if(x>=area[0] && x<(area[0]+area[2]) &&
+    y>=area[1] && y<(area[1]+area[3])){
+   var lum=((y-area[1])*255.0/(area[3]-1))
+   ret[3]=255-lum
+   return ret
+  }
+  return ret
+}
+})
+
+////////////////
+
+var useNativeColorPicker=function(thisInput,usealpha){
+     if(!usealpha && supportsColorInput() && (thisInput.type=="text" || thisInput.type=="color")){
+      var currentValue=thisInput.value
+      var oldtitle=thisInput.getAttribute("title")
+      thisInput.type="color"
+      thisInput.setAttribute("title","")
+      thisInput.value=rgbToColorHtml(colorToRgb(currentValue))
+      // needed because Chrome will align color box to
+      // baseline and not to the middle like other input
+      // elements
+      thisInput.style.verticalAlign="middle"
+      var infolink=document.createElement("a")
+      infolink.href="javascript:void(null)"
+      infolink.innerHTML=thisInput.value
+      if(thisInput.nextSibling)thisInput.parentNode.insertBefore(infolink,thisInput.nextSibling)
+      else thisInput.parentNode.appendChild(infolink)
+      var thisInputBlur=function(){
+         if(thisInput.type=="text"){
+           infolink.style.display="inline"
+           var currentValue=thisInput.value
+           thisInput.type="color"
+           thisInput.setAttribute("title","")
+           thisInput.value=rgbToColorHtml(colorToRgb(currentValue))
+           removeHandler(thisInput,"blur",thisInputBlur)
+         }
+      }
+      addHandler(infolink,(window.opera ? "mouseup" : "click"),function(){
+         var currentValue=thisInput.value
+         infolink.style.display="none"
+         thisInput.type="text"
+         thisInput.setAttribute("title",oldtitle)
+         // needed bec. Opera won't save value when changing to text
+         thisInput.value=rgbToColorDisplay(colorToRgb(currentValue)) 
+         thisInput.focus()
+         setTimeout(function(){ 
+           addHandler(thisInput,"blur",thisInputBlur)
+         },200)
+      })
+      var oldvalue=thisInput.value
+      setInterval(function(){
+         if(oldvalue!=thisInput.value){
+           infolink.innerHTML=thisInput.value; oldvalue=thisInput.value
+         }
+      },100)
+     }  
+}
+var setPatternAndTitle=function(thisInput,usealpha){
+     if(thisInput.tagName.toLowerCase()=="input" && thisInput.type=="text"){
+      var numberOrPercent="\\s*-?(\\d+|\\d+(\\.\\d+)?%)\\s*"
+      var number="\\s*-?\\d+(\\.\\d+)?\\s*"
+      var percent="\\s*-?\\d+(\\.\\d+)?%\\s*"
+      var pattern=colorToRgba.namedColorsPattern()+"|#[A-Fa-f0-9]{3}|#[A-Fa-f0-9]{6}"+
+          "|rgb\\("+numberOrPercent+","+numberOrPercent+","+numberOrPercent+"\\)"+
+          "|hsl\\("+number+","+percent+","+percent+"\\)"
+      if(usealpha){
+          pattern+="|rgba\\("+numberOrPercent+","+numberOrPercent+","+numberOrPercent+","+number+"\\)"+
+                      "|hsla\\("+number+","+percent+","+percent+","+number+"\\)"
+      }
+      var n=window.navigator;
+      var lang=(("userLanguage" in n) ? n.userLanguage : (("language" in n) ? n.language : ""));
+      if((lang=="en" || lang.indexOf("en-")==0)){
+       if(usealpha){
+         thisInput.setAttribute("title","Enter an RGB/RGBA color, color name, or HSL/HSLA color "+
+            "[ ex.: #FF8020 or rgb(200,0,0) or rgba(200,0,0,0.5) or royalblue or hsl(200,100%,50%) or hsla(200,100%,50%,0.5) ].")
+       } else {
+         thisInput.setAttribute("title","Enter an RGB color, color name, or HSL color [ "+
+            "ex.: #FF8020 or rgb(200,0,0) or royalblue or hsl(200,100%,50%) ].")
+       }
+      }
+      thisInput.setAttribute("pattern",pattern)
+     }  
+}
+
+////////////////
+var mycolorpicker=subclass(Object,{
+initialize:function(info,parent,startingvalue,usealpha){
+  var w=window
+  this.binder=new MethodBinder(this)
+  this.faster=(navigator.userAgent.indexOf("Gecko/")>=0);
+  this.pixelHeight=(this.faster ? 5 : 3)
+  this.pixelWidth=(this.faster ? 5 : 3)
+  this.p=parent
+  this.origvalue=[startingvalue[0],
+     startingvalue[1],
+     startingvalue[2],
+     (startingvalue[3]==null || !usealpha) ? 255 : startingvalue[3]] 
+  this.info=info
+  this.usealpha=usealpha
+  this.colorspace=new ColorSpace(info,usealpha)
+  this.overalldims=this.colorspace.dimensions()
+  this.current=this.colorspace.fromrgbcolor(this.origvalue)
+   var changed=false;
+   var pagex=0;
+   var pagey=0;
+  this.divs=[];
+  this.handleclick=false;
+  var pxheight=this.pixelHeight+"px";
+  var pxwidth=this.pixelWidth+"px";
+  this.p=parent;
+  this.padding=4
+  var pwidth=(this.padding*2)+(this.overalldims[0]*this.pixelWidth)
+  var pheight=(this.padding*2)+(this.overalldims[1]*this.pixelHeight)
+  this.bgcolors=[]
+  this.startx=(this.p.style.position=="absolute") ? 0 : getPageX(this.p)
+  this.starty=(this.p.style.position=="absolute") ? 0 : getPageY(this.p)
+  this.endx=this.startx+pwidth
+  this.endy=this.starty+pheight
+  this.p.style.border="1px solid black"
+  this.p.style.zIndex=100
+  try { this.p.style.borderRadius=this.padding+"px" }catch(e){}
+  this.p.style.backgroundColor="white"
+  this.p.style.width=pwidth+"px"
+  this.p.style.height=pheight+"px"
+  var tbl=null
+    var tbl=document.createElement("div")
+    tbl.style.margin=this.padding+"px"
+    tbl.style.padding="0px"
+    tbl.style.color="transparent"
+    tbl.style.fontSize="1px"
+    var ihtml="<table cellspacing='0' cellpadding='0' style='border:none;'>"
+    for(var y=0;y<this.overalldims[1];y++){
+    ihtml+="<tr>"
+    for(var x=0;x<this.overalldims[0];x++){
+     ihtml+="<td width="+this.pixelWidth+" height="+this.pixelHeight+" style='"
+     var area=this.colorspace.getarea(x,y)
+     if(area==1 || area==2 || area==6)ihtml+="cursor:crosshair;" 
+     ihtml+="padding:0;font-size:1px;border:0;background-color:"+rgbToColorHtml(this.colorspace.getcolor(x,y,this.current))
+     ihtml+="'></td>"
+    }
+    ihtml+="</tr>"
+    }
+    ihtml+="</table>"
+    this.p.appendChild(tbl)
+    // for performance reasons, get pageX and pageY before setting the HTML
+    this.pagex=getPageX(tbl) 
+    this.pagey=getPageY(tbl)
+    tbl.innerHTML=ihtml
+    tbl=tbl.getElementsByTagName("table")[0]
+    var i=0;
+    for(var y=0;y<this.overalldims[1];y++){
+    for(var x=0;x<this.overalldims[0];x++){
+     this.divs[i]=tbl.rows[y].cells[x]; i+=1
+    }}
+   this.hexvalue=document.createElement("div")
+   this.hexvalue.style.position="absolute"
+   this.hexvalue.style.color="black"
+   this.hexvalue.style.whiteSpace="nowrap"
+   var dims=this.colorspace.areadimensions(4) 
+   this.hexvalue.style.height=(dims[3]*this.pixelHeight)+"px"
+   this.resetdiv=document.createElement("div")
+   this.resetdiv.style.position="absolute"
+   dims=this.colorspace.areadimensions(5) 
+   this.resetdiv.style.height=(dims[3]*this.pixelHeight)+"px"
+   this.resetlink=document.createElement("a")
+   this.resetlink.setAttribute("href","javascript:void(null)")
+   this.resetlink.innerHTML="Reset"
+   this.resetdiv.appendChild(this.resetlink)
+   this.p.appendChild(this.resetdiv)
+   this.p.appendChild(this.hexvalue)
+   this.cursors=[]
+   for(var i=0;i<3;i++){
+    this.cursors[i]=document.createElement("div")
+    this.cursors[i].style.position="absolute"
+    this.cursors[i].style.cursor="crosshair"
+    this.cursors[i].style.fontSize="1px" // needed for quirks mode
+    this.cursors[i].style.backgroundColor="transparent"
+    this.cursors[i].style.padding="2px 2px 2px 2px"
+    this.cursors[i].style.border="2px solid black"
+    if(ieversionorbelow(7))this.cursors[i].style.fontSize="1px"
+    this.p.appendChild(this.cursors[i])
+   }
+   if(!usealpha)this.cursors[2].style.display="none"
+   this.currentArea=0
+   this.readjustpos(this.current)
+   this.setValueText(rgbToColorDisplay(this.origvalue))
+   addHandler(this.resetlink,"click",this.binder.bind(this.resetLinkClick))
+   addHandler(window,"resize",this.binder.bind(this.windowResize))
+   addHandler(document,"mousedown",this.binder.bind(this.documentMouseDown))
+   addHandler(document,"mouseup",this.binder.bind(this.documentMouseUp))
+   addHandler(document,"mousemove",this.binder.bind(this.documentMouseOver))
+},
+windowResize:function(){
+  this.startx=(this.p.style.position=="absolute") ? 0 : getPageX(this.p)
+  this.starty=(this.p.style.position=="absolute") ? 0 : getPageY(this.p)
+  this.readjustpos(this.current);
+},
+setValueText:function(text){
+    var size=100;
+    var hexarea=this.colorspace.areadimensions(4)
+    do {
+     this.hexvalue.style.fontSize=size+"%"
+     this.hexvalue.innerHTML=text
+     size-=10
+    } while(size>=50 && (text.length>=8 && (getWidth(this.hexvalue)>(hexarea[2]*this.pixelWidth))));
+},
+isdifferentcolor:function(c1,c2){
+    for(var i=0;i<c1.length;i++){
+     if(c1[i]!=c2[i])return true
+    }
+    return false
+},
+getxy:function(evt,pagex,pagey,pixelWidth,pixelHeight){
+    var px=evt.pageX();
+    px=(px-pagex)*1.0/pixelWidth
+    var py=evt.pageY();
+    py=(py-pagey)*1.0/pixelHeight
+    return [px,py]
+},
+readjustpos:function(current){
+    var curpos=this.colorspace.colortopos(current)
+    var dimsmatrix=this.colorspace.areadimensions(1) // matrix dimensions
+    var dimsside=this.colorspace.areadimensions(2) // side dimensions
+    var dimsalpha=this.colorspace.areadimensions(6) // side dimensions
+    var dimshex=this.colorspace.areadimensions(4) // color value
+    var dimsreset=this.colorspace.areadimensions(5) // reset value
+    var suggx;
+    var sx=this.startx+this.padding;
+    var sy=this.starty+this.padding;
+    setPageX(this.hexvalue,sx+(dimshex[0]*this.pixelWidth))
+    setPageY(this.hexvalue,sy+(dimshex[1]*this.pixelHeight))
+    setPageX(this.resetdiv,sx+(dimsreset[0]*this.pixelWidth))
+    setPageY(this.resetdiv,sy+(dimsreset[1]*this.pixelHeight))
+    setPageX(this.cursors[0],sx+dimsmatrix[0]+((curpos[0]*this.pixelWidth)-4))
+    setPageY(this.cursors[0],sy+dimsmatrix[1]+((curpos[1]*this.pixelHeight)-4))
+    suggx=dimsside[0]+Math.floor(dimsside[2]/2)
+    setPageX(this.cursors[1],sx+((suggx*this.pixelWidth)-4))
+    setPageY(this.cursors[1],sy+dimsside[1]+((curpos[2]*this.pixelHeight)-4))
+    suggx=dimsalpha[0]+Math.floor(dimsalpha[2]/2)
+    setPageX(this.cursors[2],sx+((suggx*this.pixelWidth)-4))
+    setPageY(this.cursors[2],sy+dimsalpha[1]+((curpos[3]*this.pixelHeight)-4))
+    var rgbcurrent=this.colorspace.torgbcolor(current)
+    var dark=isRgbDark(current)
+    for(var i=0;i<3;i++){
+     this.cursors[i].style.borderColor=(dark) ? "white" : "black"    
+    }
+    this.setValueText(rgbToColorDisplay(rgbcurrent))
+},
+hide:function(){ // public
+    this.p.style.display="none"
+    removeHandler(this.resetlink,"click",this.binder.bind(this.resetLinkClick))
+    removeHandler(window,"resize",this.binder.bind(this.windowResize))
+    removeHandler(document,"mousedown",this.binder.bind(this.documentMouseDown))
+    removeHandler(document,"mouseup",this.binder.bind(this.documentMouseUp))
+    removeHandler(document,"mousemove",this.binder.bind(this.documentMouseOver))
+},
+isInAreas:function(areas,x,y){
+ if(!areas)return true
+ var a=this.colorspace.getarea(x,y);
+ for(var i=0;i<areas.length;i++){
+  if(areas[i]==a)return true
+ }
+ return false
+},
+updatedivs:function(areas){
+    var i=0;
+    var maxwidth=this.overalldims[0];
+    var maxheight=this.overalldims[1];
+    for(var y=0;y<maxheight;y++){
+    for(var x=0;x<maxwidth;x++){
+     if(this.isInAreas(areas,x,y)){
+      var bgc=(this.bgcolors[i]) ? this.bgcolors[i] : ""
+      var c=rgbToColorHtml(this.colorspace.getcolor(x,y,this.current))
+      if(c!=bgc){
+       this.divs[i].style.backgroundColor=c
+       this.bgcolors[i]=c
+      }
+     }
+     i+=1;
+    }}
+},
+setChangeCallback:function(func){ // public
+ this.changeCallback=func
+},
+triggerChangeCallback:function(c){
+ if(this.changeCallback)this.changeCallback(c)
+},
+resetLinkClick:function(e){
+     this.changed=false
+     this.current=this.colorspace.fromrgbcolor(this.origvalue)
+     this.readjustpos(this.current)
+     this.setValueText(rgbToColorDisplay(this.origvalue))
+     this.updatedivs(null)
+     var rgb=[this.origvalue[0],this.origvalue[1],this.origvalue[2],this.usealpha ? this.origvalue[3] : 255]
+     this.triggerChangeCallback(rgb)
+},
+documentMouseDown:function(e){
+    this.handleclick=true
+    e=eventDetails(e);
+    var xy=this.getxy(e,this.pagex,this.pagey,this.pixelWidth,this.pixelHeight);
+    var area=this.colorspace.getarea(xy[0],xy[1])
+    if(area==1 || area==2 || area==6){
+     this.currentArea=area
+     var oldcolor=this.current
+     this.current=this.colorspace.changecolor(xy[0],xy[1],this.current)
+     this.readjustpos(this.current)
+     this.changed=true
+     if(this.isdifferentcolor(oldcolor,this.current)){
+      var areasToUpdate=[3]
+      if(area==1)areasToUpdate=[2,3,6]
+      if(area==2)areasToUpdate=[1,3,6]
+      this.updatedivs(areasToUpdate)
+      var rgb=this.colorspace.torgbcolor(this.current)
+      this.triggerChangeCallback(rgb)
+     }
+     e.preventDefault();
+    }
+},
+documentMouseUp:function(e){
+    this.handleclick=true
+    this.currentArea=0
+},
+documentMouseOver:function(e){
+    this.handleclick=true
+    if(this.currentArea==1 || this.currentArea==2 || this.currentArea==6){
+     e=eventDetails(e);
+     var xy=this.getxy(e,this.pagex,this.pagey,this.pixelWidth,this.pixelHeight);
+     xy=this.colorspace.confinetoarea(this.currentArea,xy);
+     var oldcolor=this.current
+     this.current=this.colorspace.changecolor(xy[0],xy[1],this.current)
+     this.readjustpos(this.current)
+     this.changed=true
+     if(this.isdifferentcolor(oldcolor,this.current)){
+      var areasToUpdate=[3]
+      if(this.currentArea==1)areasToUpdate=[2,3,6]
+      if(this.currentArea==2)areasToUpdate=[1,3,6]
+      this.updatedivs(areasToUpdate)
+      var rgb=this.colorspace.torgbcolor(this.current)
+      this.triggerChangeCallback(rgb)
+     }
+     e.preventDefault();
+    } 
+}
+})
+  
+  var defaultModel=null;
+  var EventHandlers=subclass(Object,{
+  initialize:function(){ this.handlers=[]; },
+  add:function(func){ if(func)this.handlers.push(func) },
+  remove:function(func){
+   var newhandlers=[]; removed=false;
+   for(var i=0;i<this.handlers.length;i++){
+    if(this.handlers[i]==func && !removed){
+     newhandlers[newhandlers.length]=this.handlers[i]
+    }
+   }
+   return newhandlers;
+  },
+  clear:function(){ this.handlers=[] },
+  trigger:function(){
+   for(var i=0;i<this.handlers.length;i++){
+    if(this.handlers[i])this.handlers[i].apply(this,arguments)
+   }
+  }
+  })
+  var PublicEventHandlers=subclass(Object,{
+   initialize:function(o){ this.o=o; },
+   add:function(f){ this.o.add(f); },
+   remove:function(f){ this.o.remove(f); },
+   clear:function(f){ this.o.clear(f); },
+   trigger:function(){ this.o.trigger.apply(this.o,arguments); }
+  })
+  var colorChangeEvent=new EventHandlers();
+  var colorPreviewEvent=new EventHandlers();
+  var colorPickerAdapters=[];
+  window.getColorChangeEvent=function(){
+    return new PublicEventHandlers(colorChangeEvent);
+  }
+  window.getColorPreviewEvent=function(){
+    return new PublicEventHandlers(colorPreviewEvent);
+  }
+  window.getDefaultColorModel=function(){
+    return defaultModel;
+  }
+  window.setDefaultColorModel=function(model){
+    defaultModel=model;
+  }
+  window.addColorPickerAdapter=function(adapter){
+    if(adapter){
+     colorPickerAdapters[colorPickerAdapters.length]=adapter
+    }
+  }
+  var _supportsColorInput=null
+  var supportsColorInput=function(){
+    if(_supportsColorInput!==null)return _supportsColorInput;
+    var f=document.createElement("form")
+    var inp=document.createElement("input")
+    try { inp.type="color" } catch(e){ 
+      _supportsColorInput=false; return _supportsColorInput; }
+    inp.style.display="none"
+    f.style.display="none"
+    f.appendChild(inp)
+    document.body.appendChild(f)
+    var val=(inp.value||"")
+    _supportsColorInput=(val.indexOf("#")==0)
+    return _supportsColorInput;
+  }
+  var coloredInput=function(input,button){
+   var c=colorToRgba(input.value)
+   input.style.backgroundColor=rgbToColorHtml(c)
+   input.style.color=(isRgbDark(c)) ? "white" : "black"
+   if(button){
+    button.style.backgroundImage="none"
+    try {
+     button.style.backgroundColor=rgbToColor(c)
+    } catch(e){
+     button.style.backgroundColor=rgbToColorHtml(c) // RGBA not supported
+    }
+    button.style.color=(isRgbDark(c)) ? "white" : "black"  
+   }
+  }
+  function onNewInputClickFunction(newInput,thisInput,info,usealpha){
+   return function(){
+       var o=document.createElement("div")
+       var cj=null
+       o.style.position="absolute"
+       document.body.appendChild(o)
+       var currentValue=(usealpha ? colorToRgba : colorToRgb)(thisInput.value)
+       o.style.left=getPageX(newInput)+"px"
+       o.style.top=(getPageY(newInput)+getHeight(newInput))+"px"
+       o.style.margin="0px"
+       var cp=new mycolorpicker(info,o,currentValue,usealpha)
+       cp.setChangeCallback(function(cc){
+         thisInput.value=rgbToColorDisplay(cc);
+         coloredInput(thisInput,newInput);
+         getColorPreviewEvent().trigger(cc,thisInput)         
+       })
+       var checkclick=false
+       var binder=new MethodBinder({})
+       var docclick=function(e){
+         e=eventDetails(e)
+         var cx=e.pageX(); var cy=e.pageY();
+         if(checkclick && !(cx>=getPageX(o) && cy>=getPageY(o) && 
+            cx<getPageX(o)+getWidth(o) &&
+            cy<getPageY(o)+getHeight(o))){
+           cp.hide();
+           o.parentNode.removeChild(o)
+           e.stopPropagation();
+           removeHandler(document,"click",binder.bind(docclick))
+           removeHandler(document,"mousedown",binder.bind(docdown))
+           var cc=(usealpha ? colorToRgba : colorToRgb)(thisInput.value)
+           getColorChangeEvent().trigger(cc,thisInput)
+         }
+       }
+       var docdown=function(){ checkclick=true }
+       addHandler(document,"click",binder.bind(docclick))
+       addHandler(document,"mousedown",binder.bind(docdown))
+   }
+  }
+  window.createColorPickerButton=function(thisInput,usealpha){
+     var newInput=document.createElement("input")
+     newInput.type="button"
+     newInput.value="..."
+     coloredInput(thisInput,newInput)
+     try { newInput.style.textShadow="none" }catch(e){}
+     thisInput.parentNode.insertBefore(newInput,thisInput)
+     var chgfunc=function(newInput,thisInput,useAlpha){
+      return function(){
+          var c=(useAlpha ? colorToRgba : colorToRgb)(thisInput.value)
+          oldvalue=thisInput.value
+          coloredInput(thisInput,newInput)
+          getColorChangeEvent().trigger(c,thisInput)
+     }}
+     var oldvalue=thisInput.value
+     var changefunc=chgfunc(newInput,thisInput,usealpha)
+     addHandler(thisInput,"keyup",changefunc)   
+     addHandler(thisInput,"change",changefunc)   
+     return newInput;     
+  }
+  window.setColorPicker=function(thisInput,usealpha,info){
+     if(!info)info=(defaultModel || HueSatVal);
+     setPatternAndTitle(thisInput,usealpha);
+     for(var i=0;i<colorPickerAdapters.length;i++){
+       if((colorPickerAdapters[i])(thisInput,usealpha,info)){return;}
+     }
+     useNativeColorPicker(thisInput,usealpha);
+     var newInput=createColorPickerButton(thisInput,usealpha);
+     addHandler(newInput,"click",onNewInputClickFunction(newInput,thisInput,info,usealpha))
+  }
+  addReadyHandler(function(){ // set up color pickers
+   var inputs=document.getElementsByTagName("input")
+   var inputsArray=[];
+   // convert to array because contents may change
+   for(var i=0;i<inputs.length;i++){ inputsArray[inputsArray.length]=inputs[i] }
+   for(var i=0;i<inputsArray.length;i++){
+    var thisInput=inputsArray[i]
+    if(thisInput.type=="text" && thisInput.id.indexOf("color_")==0){
+     setColorPicker(thisInput,false)
+    }
+    if(thisInput.type=="text" && thisInput.id.indexOf("acolor_")==0){
+     setColorPicker(thisInput,true)
+    }
+   }
+  })
+})();
+/////////////////////////////////////////
+
+var HueLumSat={
+ fromrgbcolor:function(rgb){ 
+  var r=rgb[0];
+  var g=rgb[1];
+  var b=rgb[2];
+  var vmax=r;
+  if (g > vmax) vmax=g;
+  if (b > vmax) vmax=b;
+  var vmin=r;
+  if (g<vmin) vmin=g;
+  if (b<vmin) vmin=b;
+  var lt=((vmax+vmin)/2.0);
+  if (vmax==vmin){
+   return [0,(lt<0 ? 0 : (lt>255 ? 255 : lt)),0]
+  }
+  var h=0;
+  var vd=(vmax-vmin);
+  var vadd=(vmax+vmin);
+   var hvd=vd/2;
+   var divisor=(lt<=127.5)?vadd:510-vadd;
+   var s=((vd*255)/divisor);
+   if (r == vmax){
+    h=(((vmax-b)*60)+hvd)/vd;
+    h-=(((vmax-g)*60)+hvd)/vd;
+   } else if (b == vmax){
+    h=240+(((vmax-g)*60)+hvd)/vd ;
+    h-=(((vmax-r)*60)+hvd)/vd ;
+   } else {
+    h=120+(((vmax-r)*60)+hvd)/vd;
+    h-=(((vmax-b)*60)+hvd)/vd;
+   }
+   if(h<0||h>=360)h=(((h%360)+360)%360);
+  return [h,(lt<0 ? 0 : (lt>255 ? 255 : lt)),(s<0 ? 0 : (s>255 ? 255 : s))]
+ },
+ torgbcolor:function(hls){ 
+ var hueval=hls[0]*1.0;//[0-360)
+ var lum=hls[1]*1.0;//[0-255]
+ var sat=hls[2]*1.0;//[0-255]
+ lum=(lum<0 ? 0 : (lum>255 ? 255 : lum));
+ sat=(sat<0 ? 0 : (sat>255 ? 255 : sat));
+ if(sat==0){
+  return [lum,lum,lum];
+ }
+ var b=0;
+ if (lum<=127.5){ 
+  b=(lum*(255.0+sat))/255.0;
+ } else {
+  b=lum*sat;
+  b=b/255.0;
+  b=lum+sat-b;
+ }
+ var a=(lum*2)-b;
+ var r,g,bl;
+ if(hueval<0||hueval>=360)hueval=(((hueval%360)+360)%360);
+ var hue=hueval+120;
+ if(hue>=360)hue-=360;
+ if (hue<60) r=(a+(b-a)*hue/60);
+ else if (hue<180) r=b;
+ else if (hue<240) r=(a+(b-a)*(240-hue)/60);
+ else r=a; 
+ hue=hueval;
+ if (hue<60) g=(a+(b-a)*hue/60);
+ else if (hue<180) g=b;
+ else if (hue<240) g=(a+(b-a)*(240-hue)/60);
+ else g=a;
+ hue=hueval-120;
+ if(hue<0)hue+=360;
+ if (hue<60) bl=(a+(b-a)*hue/60);
+ else if (hue<180) bl=b;
+ else if (hue<240) bl=(a+(b-a)*(240-hue)/60);
+ else bl=a;
+ return [(r<0 ? 0 : (r>255 ? 255 : r)),
+   (g<0 ? 0 : (g>255 ? 255 : g)),
+   (bl<0 ? 0 : (bl>255 ? 255 : bl))]
+ },
+ maxes:[360,255,255], // Hue, Lum, Sat
+ reversed:[true,false,false], // Hue, Lum, Sat
+ indexes:[1,2,0] // SatxLum, and Hue on the side
+};
+var HueSatVal={
+ fromrgbcolor:function(rgb){
+  var r=rgb[0]/255.0;
+  var g=rgb[1]/255.0;
+  var b=rgb[2]/255.0;
+  var max=r;
+  if (g > max) max=g;
+  if (b > max) max=b;
+  var min=r;
+  if (g<min) min=g;
+  if (b<min) min=b;
+  if (max == 0 || max == min){
+   var v=(max<0 ? 0 : (max>1 ? 1 : max));
+   return [0, 0, v*255.0];
+  }
+  var s=((max - min)/max)*255.0;
+  var h;
+  if (r == max){
+   h=(g - b)/(max - min)*60;
+  } else if (g == max){
+   h=(2+(b - r)/(max - min))*60;
+  } else {
+   h=(4+(r - g)/(max - min))*60;
+  }
+  if (h<0||h>=360)h=(((h%360)+360)%360);
+  var v=max*255.0;
+  return [
+    (h<0 ? 0 : (h>360 ? 360 : h)),
+    (s<0 ? 0 : (s>255 ? 255 : s)),
+    (v<0 ? 0 : (v>255 ? 255 : v))]
+},
+torgbcolor:function(hsv){
+  var hue=hsv[0];
+  var sat=hsv[1];
+  var val=hsv[2];
+  if(hue<0||hue>=360)hue=(((hue%360)+360)%360);
+  sat/=255.0;
+  val/=255.0;
+  var hi=Math.floor(hue/60);
+  var f=(hue/60)-hi;
+  var c=val*(1-sat);
+  var a=val*(1-sat*f);
+  var e=val*(1-sat*(1- f));
+  var r, g, b;
+  if (hi == 0){
+   r=val;g=e;b=c;
+  } else if (hi == 1){
+   r=a;g=val;b=c;
+  } else if (hi == 2){
+   r=c;g=val;b=e;
+  } else if (hi == 3){
+   r=c;g=a;b=val;
+  } else if (hi == 4){
+   r=e;g=c;b=val;
+  } else {
+   r=val;g=c;b=a;
+  }
+  r*=255;g*=255;b*=255
+  return [
+    (r<0 ? 0 : (r>255 ? 255 : r)),
+    (g<0 ? 0 : (g>255 ? 255 : g)),
+    (b<0 ? 0 : (b>255 ? 255 : b))]
+},
+maxes:[360,255,255],
+  reversed:[true,false,true],
+  indexes:[1,2,0]
+ };
+
