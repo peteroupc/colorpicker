@@ -140,7 +140,7 @@ function ieversionorbelow(version){
  return false
 }
 
-function addHandler(o,e,f){
+function addListener(o,e,f){
   if(!o)return
   if(e=="mousewheel" && navigator.userAgent.indexOf("Gecko/")>=0)
    e="DOMMouseScroll"
@@ -150,7 +150,7 @@ function addHandler(o,e,f){
    o.attachEvent("on"+e,f);
 }
 
-function removeHandler(o,e,f){
+function removeListener(o,e,f){
   if(!o)return
   if(e=="mousewheel" && navigator.userAgent.indexOf("Gecko/")>=0)
    e="DOMMouseScroll"
@@ -249,7 +249,7 @@ function MethodBinder(obj){
  }
 }
 
-(function(){
+(function(window){
 
 var __isMouse=function(eventType){
      return (/(click|mouse|menu)/.test(eventType) || eventType=="DOMMouseScroll");
@@ -285,7 +285,7 @@ var eventDetailsFunc={
   shiftKey: function(){ return typeof this.event.shiftKey=="undefined" ? this.event.shiftKey : this.key()==16},
   ctrlKey: function(){ return typeof this.event.ctrlKey=="undefined" ? this.event.ctrlKey : this.key()==17},
   altKey: function(){ return typeof this.event.altKey=="undefined" ? this.event.altKey : this.key()==18},
-  metaKey: function(){ return typeof event.metaKey=="undefined" ? event.metaKey : false},
+  metaKey: function(){ return typeof this.event.metaKey=="undefined" ? this.event.metaKey : false},
   objectX:function(){
    return this.pageX()-getPageX(this.target)
   },
@@ -298,21 +298,19 @@ var eventDetailsFunc={
    return false
   },
  preventDefault:function(){
-  if(window.event){
+  if(this.event.cancelable && this.event.preventDefault){
+    this.event.preventDefault();
+  } else if(window.event){
    window.event.returnValue=false
    try{ window.event.keyCode=-1 }catch(e){}
-  } else {
-   if(this.event.cancelable && this.event.preventDefault)
-    this.event.preventDefault();
   }
   return false
  },
  stopPropagation:function(){
-  if(window.event){
-   window.event.cancelBubble=true
-  } else {
-   if (this.event.stopPropagation)
+  if(this.event.stopPropagation){
     this.event.stopPropagation();
+  } else if(window.event){
+   window.event.cancelBubble=true
   }
   return false
  }
@@ -323,7 +321,7 @@ window.eventDetails=function(e){
   // This event was fixed already
   return e
  }
- var event=window.event || e
+ var event=(window.event && "srcElement" in window.event) ? window.event : e
  var target=window.event && window.event.srcElement ? window.event.srcElement : (e ? e.target : document)
  if(target && target.nodeType==3)
   target=target.parentNode
@@ -343,14 +341,14 @@ var isDomContent=false
 // images and objects are loaded and displayed (the 'onload'
 // event).  Falls back to 'onload' if necessary.  The function takes
 // no arguments.
-window.addReadyHandler=function(func){
+window.addReadyListener=function(func){
  if(isDomContent || document.readyState=="complete"){
   func();
  } else if(document.addEventListener){
-  addHandler(document,"DOMContentLoaded",function(){
+  addListener(document,"DOMContentLoaded",function(){
     isDomContent=true;func();
   },false);
-  addHandler(window,'load',function(){
+  addListener(window,'load',function(){
     if(!isDomContent)func();
   });
  } else if(navigator.userAgent.indexOf("AppleWebKit")>0){
@@ -372,10 +370,10 @@ window.addReadyHandler=function(func){
      }
    },10);
  } else {
-  addHandler(window,'load',func)
+  addListener(window,'load',func)
  }
 }
-})();
+})(window);
 function triggerEvent(o,eventName){
    if(document.createEvent){
     var e=document.createEvent("HTMLEvents")
@@ -440,6 +438,7 @@ function hlsToRgb(hls) {
 function colorHtmlToRgba(x){
  var arr=[]
  colorToRgba.setUpNamedColors();
+ if(!x || x.length==0)return [0,0,0,255];
  x=x.toLowerCase();
  if(x.indexOf("grey")>=0)x=x.replace("grey","gray");// support "grey" variants
  var ret=colorToRgba.namedColors[x]
@@ -476,23 +475,35 @@ function colorHtmlToRgba(x){
 // green, blue, and alpha (each from 0-255)
 function colorToRgba(x){
  var e=null
- if(!x)return [0,0,0,0]
+ if(!x)return null
  var c;
  if(e=(/^#([A-Fa-f0-9]{2})([A-Fa-f0-9]{2})([A-Fa-f0-9]{2})$/.exec(x))){
   return [parseInt(e[1],16),parseInt(e[2],16),parseInt(e[3],16),255]
- } else if(e=(/^rgb\(\s*(-?\d+|-?\d+(?:\.\d+)?%)\s*,\s*(-?\d+|-?\d+(?:\.\d+)?%)\s*,\s*(-?\d+|-?\d+(?:\.\d+)?%)\s*\)$/.exec(x))){
-  var r1=(e[1].indexOf("%")>0) ? ((c=parseFloat(e[1]))<0 ? 0 : (c>100 ? 100 : c))*255/100 : ((c=parseInt(e[1],10))<0 ? 0 : (c>255 ? 255 : c));
-  var r2=(e[2].indexOf("%")>0) ? ((c=parseFloat(e[2]))<0 ? 0 : (c>100 ? 100 : c))*255/100 : ((c=parseInt(e[2],10))<0 ? 0 : (c>255 ? 255 : c));
-  var r3=(e[3].indexOf("%")>0) ? ((c=parseFloat(e[3]))<0 ? 0 : (c>100 ? 100 : c))*255/100 : ((c=parseInt(e[3],10))<0 ? 0 : (c>255 ? 255 : c));
+ } else if(e=(/^rgb\(\s*(-?\d+(?:\.\d+)?%)\s*,\s*(-?\d+(?:\.\d+)?%)\s*,\s*(-?\d+(?:\.\d+)?%)\s*\)$/.exec(x))){
+  var r1=((c=parseFloat(e[1]))<0 ? 0 : (c>100 ? 100 : c))*255/100;
+  var r2=((c=parseFloat(e[2]))<0 ? 0 : (c>100 ? 100 : c))*255/100;
+  var r3=((c=parseFloat(e[3]))<0 ? 0 : (c>100 ? 100 : c))*255/100;
   return [r1,r2,r3,255]
- } else if(e=(/^rgba\(\s*(-?\d+|-?\d+(?:\.\d+)?%)\s*,\s*(-?\d+|-?\d+(?:\.\d+)?%)\s*,\s*(-?\d+|-?\d+(?:\.\d+)?%)\s*,\s*(-?\d+(?:\.\d+)?)\s*\)$/.exec(x))){
-  var r1=(e[1].indexOf("%")>0) ? ((c=parseFloat(e[1]))<0 ? 0 : (c>100 ? 100 : c))*255/100 : ((c=parseInt(e[1],10))<0 ? 0 : (c>255 ? 255 : c));
-  var r2=(e[2].indexOf("%")>0) ? ((c=parseFloat(e[2]))<0 ? 0 : (c>100 ? 100 : c))*255/100 : ((c=parseInt(e[2],10))<0 ? 0 : (c>255 ? 255 : c));
-  var r3=(e[3].indexOf("%")>0) ? ((c=parseFloat(e[3]))<0 ? 0 : (c>100 ? 100 : c))*255/100 : ((c=parseInt(e[3],10))<0 ? 0 : (c>255 ? 255 : c));
+ } else if(e=(/^rgb\(\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*\)$/.exec(x))){
+  var r1=((c=parseInt(e[1],10))<0 ? 0 : (c>255 ? 255 : c));
+  var r2=((c=parseInt(e[2],10))<0 ? 0 : (c>255 ? 255 : c));
+  var r3=((c=parseInt(e[3],10))<0 ? 0 : (c>255 ? 255 : c));
+  return [r1,r2,r3,255]
+ } else if(e=(/^rgba\(\s*(-?\d+(?:\.\d+)?%)\s*,\s*(-?\d+(?:\.\d+)?%)\s*,\s*(-?\d+(?:\.\d+)?%)\s*,\s*(-?\d+(?:\.\d+)?)\s*\)$/.exec(x))){
+  var r1=((c=parseFloat(e[1]))<0 ? 0 : (c>100 ? 100 : c))*255/100;
+  var r2=((c=parseFloat(e[2]))<0 ? 0 : (c>100 ? 100 : c))*255/100;
+  var r3=((c=parseFloat(e[3]))<0 ? 0 : (c>100 ? 100 : c))*255/100;
+  var r4=((c=parseFloat(e[4]))<0 ? 0 : (c>1 ? 1 : c))*255
+  return [r1,r2,r3,r4]
+ } else if(e=(/^rgba\(\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+(?:\.\d+)?)\s*\)$/.exec(x))){
+  var r1=((c=parseInt(e[1],10))<0 ? 0 : (c>255 ? 255 : c));
+  var r2=((c=parseInt(e[2],10))<0 ? 0 : (c>255 ? 255 : c));
+  var r3=((c=parseInt(e[3],10))<0 ? 0 : (c>255 ? 255 : c));
   var r4=((c=parseFloat(e[4]))<0 ? 0 : (c>1 ? 1 : c))*255
   return [r1,r2,r3,r4]
  } else if(e=(/^#([A-Fa-f0-9]{1})([A-Fa-f0-9]{1})([A-Fa-f0-9]{1})$/.exec(x))){
-  return [parseInt(e[1],16)<<4,parseInt(e[2],16)<<4,parseInt(e[3],16)<<4,255]
+  var a=parseInt(e[1],16); b=parseInt(e[2],16); c=parseInt(e[3],16);
+  return [a+(a<<4),b+(b<<4),c+(c<<4),255]
  } else if(e=(/^hsl\(\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)%\s*,\s*(-?\d+(?:\.\d+)?)%\s*\)$/.exec(x))){
   var r1=parseFloat(e[1]);
   if(r1<0||r1>=360)r1=(((r1%360)+360)%360);
@@ -514,9 +525,11 @@ function colorToRgba(x){
   if(x.indexOf("grey")>=0)x=x.replace("grey","gray");// support "grey" variants
   var ret=colorToRgba.namedColors[x]
   if(typeof ret=="string")return colorToRgba(ret)
-  return [0,0,0,0]
+  if(x=="transparent")return [0,0,0,0]
+  return null
  }
 }
+
 colorToRgba.namedColorsPattern=function(){
  colorToRgba.setUpNamedColors();var b=[]
  for(var o in colorToRgba.namedColors){
@@ -535,6 +548,7 @@ colorToRgba.namedColorsPattern=function(){
  }
  return ret
 }
+
 colorToRgba.setUpNamedColors=function(){
   if(!colorToRgba.namedColors){
     var nc=("aliceblue,f0f8ff,antiquewhite,faebd7,aqua,00ffff,aquamarine,7fffd4,azure,f0ffff,beige,f5f5dc,bisque,ffe4c4,black,000000,blanchedalmond,ffebcd,blue,0000ff,"
@@ -544,7 +558,7 @@ colorToRgba.setUpNamedColors=function(){
 +"darkturquoise,00ced1,darkviolet,9400d3,deeppink,ff1493,deepskyblue,00bfff,dimgray,696969,dodgerblue,1e90ff,firebrick,b22222,floralwhite,fffaf0,forestgreen,"
 +"228b22,fuchsia,ff00ff,gainsboro,dcdcdc,ghostwhite,f8f8ff,gold,ffd700,goldenrod,daa520,gray,808080,green,008000,greenyellow,adff2f,honeydew,f0fff0,hotpink,"
 +"ff69b4,indianred,cd5c5c,indigo,4b0082,ivory,fffff0,khaki,f0e68c,lavender,e6e6fa,lavenderblush,fff0f5,lawngreen,7cfc00,lemonchiffon,fffacd,lightblue,add8e6,"
-+"lightcoral,f08080,lightcyan,e0ffff,lightgoldenrodyellow,fafad2,lightgrey,d3d3d3,lightgreen,90ee90,lightpink,ffb6c1,lightsalmon,ffa07a,lightseagreen,20b2aa,"
++"lightcoral,f08080,lightcyan,e0ffff,lightgoldenrodyellow,fafad2,lightgray,d3d3d3,lightgreen,90ee90,lightpink,ffb6c1,lightsalmon,ffa07a,lightseagreen,20b2aa,"
 +"lightskyblue,87cefa,lightslategray,778899,lightsteelblue,b0c4de,lightyellow,ffffe0,lime,00ff00,limegreen,32cd32,linen,faf0e6,magenta,ff00ff,maroon,800000,"
 +"mediumaquamarine,66cdaa,mediumblue,0000cd,mediumorchid,ba55d3,mediumpurple,9370d8,mediumseagreen,3cb371,mediumslateblue,7b68ee,mediumspringgreen,"
 +"00fa9a,mediumturquoise,48d1cc,mediumvioletred,c71585,midnightblue,191970,mintcream,f5fffa,mistyrose,ffe4e1,moccasin,ffe4b5,navajowhite,ffdead,navy,"
@@ -562,8 +576,9 @@ colorToRgba.setUpNamedColors=function(){
 
 function colorToRgb(x){
  // don't include rgba or hsla
- if(x.indexOf("rgba")==0 || x.indexOf("hsla")==0)return [0,0,0,255]
+ if(x.indexOf("rgba")==0 || x.indexOf("hsla")==0)return null
  var rgba=colorToRgba(x);
+ if(!rgba||rgba[3]==0)return null // transparent
  return [rgba[0],rgba[1],rgba[2],255]
 }
 
@@ -581,7 +596,7 @@ function rgbToColor(x){
 }
 
 function rgbToColorDisplay(rgb){
- if(rgb.length==3 || (rgb.length>3 && rgb[3]===null || rgb[3]==255)){
+ if(rgb.length==3 || (rgb.length>3 && (rgb[3]===null || rgb[3]==255))){
   return rgbToColorHtml(rgb)
  } else {
   return rgbToColor(rgb).replace(/\s+/g,"")
@@ -600,16 +615,12 @@ function rgbToColorHtml(r,g,b){
    return "#"+rgbToColorHtml.table[((c=Math.round(r[0]))<0 ? 0 : (c>255 ? 255 : c))]
         +rgbToColorHtml.table[((c=Math.round(r[1]))<0 ? 0 : (c>255 ? 255 : c))]
         +rgbToColorHtml.table[((c=Math.round(r[2]))<0 ? 0 : (c>255 ? 255 : c))]
-   return ret
  } else {
    return "#"+rgbToColorHtml.table[((c=Math.round(r))<0 ? 0 : (c>255 ? 255 : c))]
         +rgbToColorHtml.table[((c=Math.round(g))<0 ? 0 : (c>255 ? 255 : c))]
         +rgbToColorHtml.table[((c=Math.round(b))<0 ? 0 : (c>255 ? 255 : c))]
-   return ret
  }
- return ret
 }
-
 
 function isRgbDark(rgb){
  return((rgb[0]*299)+(rgb[1]*587)+(rgb[2]*114))/1000<=127.5

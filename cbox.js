@@ -1,7 +1,7 @@
 /* This file is in the public domain. Peter O., 2012. http://upokecenter.dreamhosters.com 
     Public domain dedication: http://creativecommons.org/publicdomain/zero/1.0/legalcode  */
 
-(function(){
+(function(window){
 
  var ColorSpace=subclass(Object,{
   initialize:function(info,usealpha){
@@ -196,12 +196,93 @@ changecolor:function(x,y,current){
 
 ////////////////
 
+  var _namedColorsDatalist=null;
+namedColorsDatalist=function(){
+   if(_namedColorsDatalist!=null)return _namedColorsDatalist
+ colorToRgba.setUpNamedColors();var b=[]
+ var datalist=document.createElement("datalist")
+ for(var o in colorToRgba.namedColors){
+  var v=colorToRgba.namedColors[o]
+  if(typeof v=="string"){
+   var op=document.createElement("option")
+   op.value=o; datalist.appendChild(op);
+   console.log(o)
+   if(o.indexOf("gray")>=0){
+     var o2=o.replace("gray","grey")
+     var op=document.createElement("option")
+     op.value=o2; datalist.appendChild(op);
+   }
+  }
+  }
+   var datalistid=""; var dlid=0;
+   do{
+        datalistid="datalist-petero"+dlid; dlid+=1;
+   }while(document.getElementById(datalistid));
+   datalist.id=datalistid
+      document.body.appendChild(datalist)
+    _namedColorsDatalist=datalistid
+    return _namedColorsDatalist
+}
+
+  var _namedColorsDatalist2=null;
+  var namedColorsDatalist2=function(){
+   if(_namedColorsDatalist2!=null)return _namedColorsDatalist2
+   colorToRgba.setUpNamedColors();var colors=[]
+   for(var o in colorToRgba.namedColors){
+    var v=colorToRgba.namedColors[o]
+    if(typeof v=="string" && o.indexOf("grey")<0){
+     var exists=false;
+     var c=HueLumSat.fromrgbcolor(colorToRgb(v))
+     for(var i=0;i<colors.length;i++){
+      var d=colors[i];if(d[0]==c[0]&&d[1]==c[1]&&
+          d[2]==c[2]){ exists=true;break;}
+     }
+     if(!exists){colors.push(c) }
+    }
+   }
+   for(var r=0;r<=255;r+=85){
+   for(var g=0;g<=255;g+=85){
+   for(var b=0;b<=255;b+=85){
+     var c=HueLumSat.fromrgbcolor([r,g,b])
+     for(var i=0;i<colors.length;i++){
+      var d=colors[i];if(d[0]==c[0]&&d[1]==c[1]&&
+          d[2]==c[2]){ exists=true;break;}
+     }
+     if(!exists){colors.push(c) }
+   }}}
+   colors.sort(function(a,b){
+     var vividA=Math.floor(((a[2]*(127.5-Math.abs(a[1]-127.5))/127.5)))
+     var vividB=Math.floor(((b[2]*(127.5-Math.abs(b[1]-127.5))/127.5)))
+     if(vividA==0 && vividB==0)return a[1]-b[1]
+     vividA=Math.ceil(vividA/16)
+     vividB=Math.ceil(vividB/16)
+     return ((vividA==vividB) ? a[0]-b[0] : vividB-vividA)
+   })
+   var datalist=document.createElement("datalist")
+   for(var i=0;i<colors.length;i++){
+    var o=document.createElement("option")
+    o.value=rgbToColorHtml(HueLumSat.torgbcolor(colors[i]))
+    datalist.appendChild(o)
+   }
+   var datalistid=""; var dlid=0;
+   do{
+        datalistid="datalist-petero"+dlid; dlid+=1;
+   }while(document.getElementById(datalistid));
+   datalist.id=datalistid
+   document.body.appendChild(datalist)
+    _namedColorsDatalist2=datalistid
+    return _namedColorsDatalist2
+  }
+
 var useNativeColorPicker=function(thisInput,usealpha){
      if(!usealpha && supportsColorInput() && (thisInput.type=="text" || thisInput.type=="color")){
       var currentValue=thisInput.value
+      var datalistid=namedColorsDatalist2()
       var oldtitle=thisInput.getAttribute("title")
+      var oldlist=thisInput.getAttribute("list") // list applies to "color" inputs differently from "text" inputs
       thisInput.type="color"
-      thisInput.setAttribute("title","")
+      thisInput.title=""
+      thisInput.setAttribute("list",datalistid)
       thisInput.value=rgbToColorHtml(colorToRgb(currentValue))
       // needed because Chrome will align color box to
       // baseline and not to the middle like other input
@@ -217,21 +298,23 @@ var useNativeColorPicker=function(thisInput,usealpha){
            infolink.style.display="inline"
            var currentValue=thisInput.value
            thisInput.type="color"
-           thisInput.setAttribute("title","")
+           thisInput.setAttribute("list",datalistid)
+           thisInput.title=""
            thisInput.value=rgbToColorHtml(colorToRgb(currentValue))
-           removeHandler(thisInput,"blur",thisInputBlur)
+           removeListener(thisInput,"blur",thisInputBlur)
          }
       }
-      addHandler(infolink,(window.opera ? "mouseup" : "click"),function(){
+      addListener(infolink,(window.opera ? "mouseup" : "click"),function(){
          var currentValue=thisInput.value
          infolink.style.display="none"
          thisInput.type="text"
-         thisInput.setAttribute("title",oldtitle)
+         thisInput.title=oldtitle
+         thisInput.setAttribute("list",oldlist)
          // needed bec. Opera won't save value when changing to text
          thisInput.value=rgbToColorDisplay(colorToRgb(currentValue)) 
          thisInput.focus()
          setTimeout(function(){ 
-           addHandler(thisInput,"blur",thisInputBlur)
+           addListener(thisInput,"blur",thisInputBlur)
          },200)
       })
       var oldvalue=thisInput.value
@@ -242,12 +325,56 @@ var useNativeColorPicker=function(thisInput,usealpha){
       },100)
      }  
 }
+
+  var _supportsPattern=null;
+  var supportsPattern=function(){
+    if(_supportsPattern!==null)return _supportsPattern;
+    var inp=document.createElement("input")
+    inp.style.display="none"
+    if(!("pattern" in inp) || typeof inp.validity=="undefined"){
+     _supportsPattern=false; return _supportsPattern
+    }
+    if(navigator.vendor=="Apple Computer, Inc."){
+     // Safari doesn't validate forms even though it includes a validation API
+     _supportsPattern=false; return _supportsPattern
+    }
+    _supportsPattern=true; return _supportsPattern
+  }
+  var validatePattern=function(e){
+   e=eventDetails(e)
+   for(var i=0;i<e.target.elements.length;i++){
+    var inp=e.target.elements[i]
+    var a=inp.getAttribute("pattern")
+    if(!a || a.length==0)continue
+    var inval=false;
+    if(inp.getAttribute("required")!==null && inp.value.length==0){
+            alert("Please fill in the field: "+inp.title);inval=true;  
+    } else if(inp.value.length>0 && !(new RegExp("^(?:"+a+")$").test(inp.value))){
+            alert("Please match the requested format: "+inp.title);inval=true;  
+    }
+    if(inval){
+            inp.focus()
+            e=eventDetails(e);
+            e.preventDefault()
+            return false
+    }
+   }
+   return false
+  }
+  
+  
 var setPatternAndTitle=function(thisInput,usealpha){
      if(thisInput.tagName.toLowerCase()=="input" && thisInput.type=="text"){
       var numberOrPercent="\\s*-?(\\d+|\\d+(\\.\\d+)?%)\\s*"
       var number="\\s*-?\\d+(\\.\\d+)?\\s*"
       var percent="\\s*-?\\d+(\\.\\d+)?%\\s*"
-      var pattern=colorToRgba.namedColorsPattern()+"|#[A-Fa-f0-9]{3}|#[A-Fa-f0-9]{6}"+
+      var datalistid=namedColorsDatalist()
+      thisInput.setAttribute("list",datalistid)
+      var pattern=colorToRgba.namedColorsPattern()
+      // Use a faster pattern for Opera because Opera seems to verify the
+      // pattern for every suggestion
+      if(window.opera)pattern="[Yy][Ee][Ll][Ll][Oo][Ww](?:[Gg][Rr][Ee][Ee][Nn])?|[A-Wa-w][A-Za-z]{1,19}"
+      pattern+="|#[A-Fa-f0-9]{3}|#[A-Fa-f0-9]{6}"+
           "|rgb\\("+numberOrPercent+","+numberOrPercent+","+numberOrPercent+"\\)"+
           "|hsl\\("+number+","+percent+","+percent+"\\)"
       if(usealpha){
@@ -265,7 +392,14 @@ var setPatternAndTitle=function(thisInput,usealpha){
             "ex.: #FF8020 or rgb(200,0,0) or royalblue or hsl(200,100%,50%) ].")
        }
       }
-      thisInput.setAttribute("pattern",pattern)
+      thisInput.setAttribute("pattern","("+pattern+")")
+      if(!supportsPattern()){
+       // Fallback for browsers without "pattern" support
+       if(thisInput.form){
+        removeListener(thisInput.form,"submit",validatePattern)
+        addListener(thisInput.form,"submit",validatePattern)
+       }
+      }
      }  
 }
 
@@ -290,6 +424,8 @@ initialize:function(info,parent,startingvalue,usealpha){
    var changed=false;
    var pagex=0;
    var pagey=0;
+  this.origPageX=getPageX(this.p)
+  this.origPageY=getPageY(this.p)
   this.divs=[];
   this.handleclick=false;
   var pxheight=this.pixelHeight+"px";
@@ -299,6 +435,7 @@ initialize:function(info,parent,startingvalue,usealpha){
   var pwidth=(this.padding*2)+(this.overalldims[0]*this.pixelWidth)
   var pheight=(this.padding*2)+(this.overalldims[1]*this.pixelHeight)
   this.bgcolors=[]
+  if(this.p.style.position=="absolute")setPageX(this.p,this.adjustLeft(this.p,this.origPageX))
   this.startx=(this.p.style.position=="absolute") ? 0 : getPageX(this.p)
   this.starty=(this.p.style.position=="absolute") ? 0 : getPageY(this.p)
   this.endx=this.startx+pwidth
@@ -339,6 +476,7 @@ initialize:function(info,parent,startingvalue,usealpha){
     for(var x=0;x<this.overalldims[0];x++){
      this.divs[i]=tbl.rows[y].cells[x]; i+=1
     }}
+    this.tbl=tbl
    this.hexvalue=document.createElement("div")
    this.hexvalue.style.position="absolute"
    this.hexvalue.style.color="black"
@@ -369,17 +507,34 @@ initialize:function(info,parent,startingvalue,usealpha){
    }
    if(!usealpha)this.cursors[2].style.display="none"
    this.currentArea=0
+   if(this.p.style.position=="absolute")setPageX(this.p,this.adjustLeft(this.p,this.origPageX))
+   this.pagex=getPageX(tbl) // get page X again since table's x may have changed
+   this.startx=(this.p.style.position=="absolute") ? 0 : getPageX(this.p)
+   this.starty=(this.p.style.position=="absolute") ? 0 : getPageY(this.p)
+   this.endx=this.startx+pwidth
+   this.endy=this.starty+pheight
    this.readjustpos(this.current)
    this.setValueText(rgbToColorDisplay(this.origvalue))
-   addHandler(this.resetlink,"click",this.binder.bind(this.resetLinkClick))
-   addHandler(window,"resize",this.binder.bind(this.windowResize))
-   addHandler(document,"mousedown",this.binder.bind(this.documentMouseDown))
-   addHandler(document,"mouseup",this.binder.bind(this.documentMouseUp))
-   addHandler(document,"mousemove",this.binder.bind(this.documentMouseOver))
+   addListener(this.resetlink,"click",this.binder.bind(this.resetLinkClick))
+   addListener(window,"resize",this.binder.bind(this.windowResize))
+   addListener(document,"mousedown",this.binder.bind(this.documentMouseDown))
+   addListener(document,"mouseup",this.binder.bind(this.documentMouseUp))
+   addListener(document,"mousemove",this.binder.bind(this.documentMouseOver))
+},
+adjustLeft:function(p,startPos){
+   if("clientWidth" in document.body){
+      var cw=document.body.clientWidth
+      return Math.min(cw-getWidth(p),startPos)
+   }
+   return startPos
 },
 windowResize:function(){
+  if(this.p.style.position=="absolute")setPageX(this.p,this.adjustLeft(this.p,this.origPageX))
   this.startx=(this.p.style.position=="absolute") ? 0 : getPageX(this.p)
   this.starty=(this.p.style.position=="absolute") ? 0 : getPageY(this.p)
+  this.pagex=getPageX(this.tbl) // get page X again since table's x may have changed
+  this.endx=this.startx+pwidth
+  this.endy=this.starty+pheight
   this.readjustpos(this.current);
 },
 setValueText:function(text){
@@ -427,7 +582,7 @@ readjustpos:function(current){
     setPageX(this.cursors[2],sx+((suggx*this.pixelWidth)-4))
     setPageY(this.cursors[2],sy+dimsalpha[1]+((curpos[3]*this.pixelHeight)-4))
     var rgbcurrent=this.colorspace.torgbcolor(current)
-    var dark=isRgbDark(current)
+    var dark=isRgbDark(rgbcurrent)
     for(var i=0;i<3;i++){
      this.cursors[i].style.borderColor=(dark) ? "white" : "black"    
     }
@@ -435,11 +590,11 @@ readjustpos:function(current){
 },
 hide:function(){ // public
     this.p.style.display="none"
-    removeHandler(this.resetlink,"click",this.binder.bind(this.resetLinkClick))
-    removeHandler(window,"resize",this.binder.bind(this.windowResize))
-    removeHandler(document,"mousedown",this.binder.bind(this.documentMouseDown))
-    removeHandler(document,"mouseup",this.binder.bind(this.documentMouseUp))
-    removeHandler(document,"mousemove",this.binder.bind(this.documentMouseOver))
+    removeListener(this.resetlink,"click",this.binder.bind(this.resetLinkClick))
+    removeListener(window,"resize",this.binder.bind(this.windowResize))
+    removeListener(document,"mousedown",this.binder.bind(this.documentMouseDown))
+    removeListener(document,"mouseup",this.binder.bind(this.documentMouseUp))
+    removeListener(document,"mousemove",this.binder.bind(this.documentMouseOver))
 },
 isInAreas:function(areas,x,y){
  if(!areas)return true
@@ -590,10 +745,11 @@ documentMouseOver:function(e){
     document.body.appendChild(f)
     var val=(inp.value||"")
     _supportsColorInput=(val.indexOf("#")==0)
+    document.body.removeChild(f)
     return _supportsColorInput;
   }
   var coloredInput=function(input,button){
-   var c=colorToRgba(input.value)
+   var c=(colorToRgba(input.value)||[0,0,0,255])
    input.style.backgroundColor=rgbToColorHtml(c)
    input.style.color=(isRgbDark(c)) ? "white" : "black"
    if(button){
@@ -612,7 +768,7 @@ documentMouseOver:function(e){
        var cj=null
        o.style.position="absolute"
        document.body.appendChild(o)
-       var currentValue=(usealpha ? colorToRgba : colorToRgb)(thisInput.value)
+       var currentValue=((usealpha ? colorToRgba : colorToRgb)(thisInput.value))||[0,0,0,255]
        o.style.left=getPageX(newInput)+"px"
        o.style.top=(getPageY(newInput)+getHeight(newInput))+"px"
        o.style.margin="0px"
@@ -633,15 +789,15 @@ documentMouseOver:function(e){
            cp.hide();
            o.parentNode.removeChild(o)
            e.stopPropagation();
-           removeHandler(document,"click",binder.bind(docclick))
-           removeHandler(document,"mousedown",binder.bind(docdown))
-           var cc=(usealpha ? colorToRgba : colorToRgb)(thisInput.value)
+           removeListener(document,"click",binder.bind(docclick))
+           removeListener(document,"mousedown",binder.bind(docdown))
+           var cc=((usealpha ? colorToRgba : colorToRgb)(thisInput.value))||[0,0,0,255]
            getColorChangeEvent().trigger(cc,thisInput)
          }
        }
        var docdown=function(){ checkclick=true }
-       addHandler(document,"click",binder.bind(docclick))
-       addHandler(document,"mousedown",binder.bind(docdown))
+       addListener(document,"click",binder.bind(docclick))
+       addListener(document,"mousedown",binder.bind(docdown))
    }
   }
   window.createColorPickerButton=function(thisInput,usealpha){
@@ -653,15 +809,18 @@ documentMouseOver:function(e){
      thisInput.parentNode.insertBefore(newInput,thisInput)
      var chgfunc=function(newInput,thisInput,useAlpha){
       return function(){
-          var c=(useAlpha ? colorToRgba : colorToRgb)(thisInput.value)
+          var c=((usealpha ? colorToRgba : colorToRgb)(thisInput.value))||[0,0,0,255]
           oldvalue=thisInput.value
           coloredInput(thisInput,newInput)
           getColorChangeEvent().trigger(c,thisInput)
      }}
      var oldvalue=thisInput.value
      var changefunc=chgfunc(newInput,thisInput,usealpha)
-     addHandler(thisInput,"keyup",changefunc)   
-     addHandler(thisInput,"change",changefunc)   
+     // because of suggestions, use "input" instead of "keyup" if
+     // supported by the browser (IE9 supports input only partially;
+     // backspace doesn't trigger the input event)
+     addListener(thisInput,("oninput" in thisInput && !ieversionorbelow(9)) ? "input" : "keyup",changefunc)
+     addListener(thisInput,"change",changefunc)   
      return newInput;     
   }
   window.setColorPicker=function(thisInput,usealpha,info){
@@ -672,9 +831,9 @@ documentMouseOver:function(e){
      }
      useNativeColorPicker(thisInput,usealpha);
      var newInput=createColorPickerButton(thisInput,usealpha);
-     addHandler(newInput,"click",onNewInputClickFunction(newInput,thisInput,info,usealpha))
+     addListener(newInput,"click",onNewInputClickFunction(newInput,thisInput,info,usealpha))
   }
-  addReadyHandler(function(){ // set up color pickers
+  addReadyListener(function(){ // set up color pickers
    var inputs=document.getElementsByTagName("input")
    var inputsArray=[];
    // convert to array because contents may change
@@ -689,7 +848,7 @@ documentMouseOver:function(e){
     }
    }
   })
-})();
+})(window);
 /////////////////////////////////////////
 
 var HueLumSat={
