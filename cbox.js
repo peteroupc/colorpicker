@@ -206,7 +206,6 @@ namedColorsDatalist=function(){
   if(typeof v=="string"){
    var op=document.createElement("option")
    op.value=o; datalist.appendChild(op);
-   console.log(o)
    if(o.indexOf("gray")>=0){
      var o2=o.replace("gray","grey")
      var op=document.createElement("option")
@@ -216,7 +215,7 @@ namedColorsDatalist=function(){
   }
    var datalistid=""; var dlid=0;
    do{
-        datalistid="datalist-petero"+dlid; dlid+=1;
+        datalistid="datalist-colorpicker"+dlid; dlid+=1;
    }while(document.getElementById(datalistid));
    datalist.id=datalistid
       document.body.appendChild(datalist)
@@ -266,7 +265,7 @@ namedColorsDatalist=function(){
    }
    var datalistid=""; var dlid=0;
    do{
-        datalistid="datalist-petero"+dlid; dlid+=1;
+        datalistid="datalist-colorpicker"+dlid; dlid+=1;
    }while(document.getElementById(datalistid));
    datalist.id=datalistid
    document.body.appendChild(datalist)
@@ -432,20 +431,20 @@ initialize:function(info,parent,startingvalue,usealpha){
   var pxwidth=this.pixelWidth+"px";
   this.p=parent;
   this.padding=4
-  var pwidth=(this.padding*2)+(this.overalldims[0]*this.pixelWidth)
-  var pheight=(this.padding*2)+(this.overalldims[1]*this.pixelHeight)
+  this.pwidth=(this.padding*2)+(this.overalldims[0]*this.pixelWidth)
+  this.pheight=(this.padding*2)+(this.overalldims[1]*this.pixelHeight)
   this.bgcolors=[]
   if(this.p.style.position=="absolute")setPageX(this.p,this.adjustLeft(this.p,this.origPageX))
   this.startx=(this.p.style.position=="absolute") ? 0 : getPageX(this.p)
   this.starty=(this.p.style.position=="absolute") ? 0 : getPageY(this.p)
-  this.endx=this.startx+pwidth
-  this.endy=this.starty+pheight
+  this.endx=this.startx+this.pwidth
+  this.endy=this.starty+this.pheight
   this.p.style.border="1px solid black"
   this.p.style.zIndex=100
   try { this.p.style.borderRadius=this.padding+"px" }catch(e){}
   this.p.style.backgroundColor="white"
-  this.p.style.width=pwidth+"px"
-  this.p.style.height=pheight+"px"
+  this.p.style.width=this.pwidth+"px"
+  this.p.style.height=this.pheight+"px"
   var tbl=null
     var tbl=document.createElement("div")
     tbl.style.margin=this.padding+"px"
@@ -501,25 +500,73 @@ initialize:function(info,parent,startingvalue,usealpha){
     this.cursors[i].style.fontSize="1px" // needed for quirks mode
     this.cursors[i].style.backgroundColor="transparent"
     this.cursors[i].style.padding="2px 2px 2px 2px"
-    this.cursors[i].style.border="2px solid black"
+    this.cursors[i].style.border=(i==0) ? "2px dotted black" : "2px solid black"
     if(ieversionorbelow(7))this.cursors[i].style.fontSize="1px"
     this.p.appendChild(this.cursors[i])
    }
-   if(!usealpha)this.cursors[2].style.display="none"
+   if(!this.usealpha)this.cursors[2].style.display="none"
    this.currentArea=0
    if(this.p.style.position=="absolute")setPageX(this.p,this.adjustLeft(this.p,this.origPageX))
    this.pagex=getPageX(tbl) // get page X again since table's x may have changed
    this.startx=(this.p.style.position=="absolute") ? 0 : getPageX(this.p)
    this.starty=(this.p.style.position=="absolute") ? 0 : getPageY(this.p)
-   this.endx=this.startx+pwidth
-   this.endy=this.starty+pheight
+   this.endx=this.startx+this.pwidth
+   this.endy=this.starty+this.pheight
    this.readjustpos(this.current)
+   this.focusedCursor=0
    this.setValueText(rgbToColorDisplay(this.origvalue))
    addListener(this.resetlink,"click",this.binder.bind(this.resetLinkClick))
    addListener(window,"resize",this.binder.bind(this.windowResize))
+   addListener(document,"keydown",this.binder.bind(this.documentKeyDown))
    addListener(document,"mousedown",this.binder.bind(this.documentMouseDown))
    addListener(document,"mouseup",this.binder.bind(this.documentMouseUp))
    addListener(document,"mousemove",this.binder.bind(this.documentMouseOver))
+},
+documentKeyDown:function(e){
+  e=eventDetails(e)
+  var key=e.key();
+  if(key==9){ // tab
+   this.focusedCursor++;
+   var m=("focus" in this.resetlink) ? 3 : 2;
+   var choices=((this.usealpha) ? m+1 : m)
+   this.focusedCursor%=choices;
+   for(var i=0;i<3;i++){
+     this.cursors[i].style.borderStyle=(i==this.focusedCursor) ? "dotted" : "solid"
+   }
+   if("focus" in this.resetlink){
+    if(this.focusedCursor==choices-1)this.resetlink.focus()
+    else this.resetlink.blur()
+   }
+   e.preventDefault();
+   return false;
+  }
+  var focusedArea=[1,2,6][this.focusedCursor]
+  var curpos=this.colorspace.colortopos(this.current)
+  var dimsmatrix=this.colorspace.areadimensions(focusedArea) // matrix dimensions
+  var xy=[dimsmatrix[0]+curpos[0],dimsmatrix[1]+curpos[1]]
+  if(focusedArea==2){
+   xy=[dimsmatrix[0],dimsmatrix[1]+curpos[2]]
+  }
+  if(focusedArea==6){
+   xy=[dimsmatrix[0],dimsmatrix[1]+curpos[3]]
+  }
+  if(key==37){ // left
+    xy[0]-=1
+  } else if(key==38){ //up
+    xy[1]-=1
+  } else if(key==39){ //right
+    xy[0]+=1
+  } else if(key==40){ //down
+    xy[1]+=1
+  }
+  if(key>=37 && key<=40){
+   xy=this.colorspace.confinetoarea(focusedArea,xy);
+   var oldcurrentarea=this.currentArea
+   this.respondToMouseDown(e,xy,focusedArea);
+   this.currentArea=oldcurrentarea
+   return false;
+  }
+  return true;
 },
 adjustLeft:function(p,startPos){
    if("clientWidth" in document.body){
@@ -533,8 +580,8 @@ windowResize:function(){
   this.startx=(this.p.style.position=="absolute") ? 0 : getPageX(this.p)
   this.starty=(this.p.style.position=="absolute") ? 0 : getPageY(this.p)
   this.pagex=getPageX(this.tbl) // get page X again since table's x may have changed
-  this.endx=this.startx+pwidth
-  this.endy=this.starty+pheight
+  this.endx=this.startx+this.pwidth
+  this.endy=this.starty+this.pheight
   this.readjustpos(this.current);
 },
 setValueText:function(text){
@@ -592,6 +639,7 @@ hide:function(){ // public
     this.p.style.display="none"
     removeListener(this.resetlink,"click",this.binder.bind(this.resetLinkClick))
     removeListener(window,"resize",this.binder.bind(this.windowResize))
+    removeListener(document,"keydown",this.binder.bind(this.documentKeyDown))
     removeListener(document,"mousedown",this.binder.bind(this.documentMouseDown))
     removeListener(document,"mouseup",this.binder.bind(this.documentMouseUp))
     removeListener(document,"mousemove",this.binder.bind(this.documentMouseOver))
@@ -636,12 +684,7 @@ resetLinkClick:function(e){
      var rgb=[this.origvalue[0],this.origvalue[1],this.origvalue[2],this.usealpha ? this.origvalue[3] : 255]
      this.triggerChangeCallback(rgb)
 },
-documentMouseDown:function(e){
-    this.handleclick=true
-    e=eventDetails(e);
-    var xy=this.getxy(e,this.pagex,this.pagey,this.pixelWidth,this.pixelHeight);
-    var area=this.colorspace.getarea(xy[0],xy[1])
-    if(area==1 || area==2 || area==6){
+respondToMouseDown:function(e,xy,area){
      this.currentArea=area
      var oldcolor=this.current
      this.current=this.colorspace.changecolor(xy[0],xy[1],this.current)
@@ -656,6 +699,14 @@ documentMouseDown:function(e){
       this.triggerChangeCallback(rgb)
      }
      e.preventDefault();
+},
+documentMouseDown:function(e){
+    this.handleclick=true
+    e=eventDetails(e);
+    var xy=this.getxy(e,this.pagex,this.pagey,this.pixelWidth,this.pixelHeight);
+    var area=this.colorspace.getarea(xy[0],xy[1])
+    if(area==1 || area==2 || area==6){
+       this.respondToMouseDown(e,xy,area)
     }
 },
 documentMouseUp:function(e){
@@ -668,19 +719,7 @@ documentMouseOver:function(e){
      e=eventDetails(e);
      var xy=this.getxy(e,this.pagex,this.pagey,this.pixelWidth,this.pixelHeight);
      xy=this.colorspace.confinetoarea(this.currentArea,xy);
-     var oldcolor=this.current
-     this.current=this.colorspace.changecolor(xy[0],xy[1],this.current)
-     this.readjustpos(this.current)
-     this.changed=true
-     if(this.isdifferentcolor(oldcolor,this.current)){
-      var areasToUpdate=[3]
-      if(this.currentArea==1)areasToUpdate=[2,3,6]
-      if(this.currentArea==2)areasToUpdate=[1,3,6]
-      this.updatedivs(areasToUpdate)
-      var rgb=this.colorspace.torgbcolor(this.current)
-      this.triggerChangeCallback(rgb)
-     }
-     e.preventDefault();
+     this.respondToMouseDown(e,xy,this.currentArea);
     } 
 }
 })
@@ -780,24 +819,37 @@ documentMouseOver:function(e){
        })
        var checkclick=false
        var binder=new MethodBinder({})
+       var endColorBox=function(){
+           cp.hide();
+           o.parentNode.removeChild(o)
+           removeListener(document,"keydown",binder.bind(keydown))
+           removeListener(document,"click",binder.bind(docclick))
+           removeListener(document,"mousedown",binder.bind(docdown))
+           var cc=((usealpha ? colorToRgba : colorToRgb)(thisInput.value))||[0,0,0,255]
+           getColorChangeEvent().trigger(cc,thisInput)
+       }
+       var keydown=function(e){
+         e=eventDetails(e)
+         if(e.key()==27){
+           e.preventDefault();
+           e.stopPropagation();
+           endColorBox();
+         }
+       }
        var docclick=function(e){
          e=eventDetails(e)
          var cx=e.pageX(); var cy=e.pageY();
          if(checkclick && !(cx>=getPageX(o) && cy>=getPageY(o) && 
             cx<getPageX(o)+getWidth(o) &&
             cy<getPageY(o)+getHeight(o))){
-           cp.hide();
-           o.parentNode.removeChild(o)
            e.stopPropagation();
-           removeListener(document,"click",binder.bind(docclick))
-           removeListener(document,"mousedown",binder.bind(docdown))
-           var cc=((usealpha ? colorToRgba : colorToRgb)(thisInput.value))||[0,0,0,255]
-           getColorChangeEvent().trigger(cc,thisInput)
+           endColorBox();
          }
        }
        var docdown=function(){ checkclick=true }
        addListener(document,"click",binder.bind(docclick))
        addListener(document,"mousedown",binder.bind(docdown))
+       addListener(document,"keydown",binder.bind(keydown))
    }
   }
   window.createColorPickerButton=function(thisInput,usealpha){
