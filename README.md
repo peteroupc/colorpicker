@@ -50,12 +50,23 @@ getColorPreviewEvent().add( _handler_ ) - adds a function to call when a color p
 
 getColorPreviewEvent().remove( _handler_ ) - removes an event handler for a color preview event.
 
-addColorPickerHandler( _handler_ ) - adds a function to call when setting up a color picker.  This is used mainly to support third-party JavaScript color pickers; the function should include code that links the text box with the third-party color picker.  If this function returns true, the code was linked to the third-party color picker successfully.  The function takes three parameters:
+addColorPickerHandler( _handler_ ) - adds a function to call when setting up a color picker.  This is used mainly to support third-party JavaScript color pickers; the 
+function should include code that links the text box with the third-party color picker.  If this function returns true, the code was linked to the third-party color picker 
+successfully.  The function takes three parameters:
 
 1. input - the HTML element for the input text box.
 2. usealpha - whether this color picker should use the alpha channel or not
 3. info - the color model used.
 
-createColorPickerButton( _input_, _usealpha_ ) - adds a color picker button next to the color text box.  This is a helper function used within functions called via `addColorPickerHandler()`. _input_ and _usealpha_ have the same meaning as in ` setColorPicker()`.
+createColorPickerButton( _input_, _usealpha_ ) - adds a color picker button next to the color text box.  This is a helper function used within functions called via `addColorPickerHandler()`. 
+_input_ and _usealpha_ have the same meaning as in ` setColorPicker()`.
 
+## Server-Side Processing
 
+Every form sent to the server should be validated on the server side.  The color boxes accept a wide variety of values for
+colors, which need to be validated and converted to a common format.  Use the server-side scripts in another of my projects:
+
+https://github.com/peteroupc/colorvalidator
+
+That project contains scripts for five popular server-side languages: PHP, Python, Ruby, C#, and Java.  These scripts are
+also released to the public domain.

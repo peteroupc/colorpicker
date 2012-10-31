@@ -830,7 +830,7 @@ documentMouseOver:function(e){
        }
        var keydown=function(e){
          e=eventDetails(e)
-         if(e.key()==27){
+         if(e.key()==27 || e.key()==13){ // escape or enter
            e.preventDefault();
            e.stopPropagation();
            endColorBox();
