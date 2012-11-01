@@ -1,7 +1,7 @@
 /* This file is in the public domain. Peter O., 2012. http://upokecenter.dreamhosters.com 
     Public domain dedication: http://creativecommons.org/publicdomain/zero/1.0/legalcode  */
 
-(function(window){
+(function(window,rootobj){
 
  var ColorSpace=subclass(Object,{
   initialize:function(info,usealpha){
@@ -231,7 +231,7 @@ namedColorsDatalist=function(){
     var v=colorToRgba.namedColors[o]
     if(typeof v=="string" && o.indexOf("grey")<0){
      var exists=false;
-     var c=HueLumSat.fromrgbcolor(colorToRgb(v))
+     var c=PDColorPicker.HueLumSat.fromrgbcolor(colorToRgb(v))
      for(var i=0;i<colors.length;i++){
       var d=colors[i];if(d[0]==c[0]&&d[1]==c[1]&&
           d[2]==c[2]){ exists=true;break;}
@@ -242,7 +242,7 @@ namedColorsDatalist=function(){
    for(var r=0;r<=255;r+=85){
    for(var g=0;g<=255;g+=85){
    for(var b=0;b<=255;b+=85){
-     var c=HueLumSat.fromrgbcolor([r,g,b])
+     var c=PDColorPicker.HueLumSat.fromrgbcolor([r,g,b])
      for(var i=0;i<colors.length;i++){
       var d=colors[i];if(d[0]==c[0]&&d[1]==c[1]&&
           d[2]==c[2]){ exists=true;break;}
@@ -260,7 +260,7 @@ namedColorsDatalist=function(){
    var datalist=document.createElement("datalist")
    for(var i=0;i<colors.length;i++){
     var o=document.createElement("option")
-    o.value=rgbToColorHtml(HueLumSat.torgbcolor(colors[i]))
+    o.value=rgbToColorHtml(PDColorPicker.HueLumSat.torgbcolor(colors[i]))
     datalist.appendChild(o)
    }
    var datalistid=""; var dlid=0;
@@ -749,24 +749,33 @@ documentMouseOver:function(e){
    add:function(f){ this.o.add(f); },
    remove:function(f){ this.o.remove(f); },
    clear:function(f){ this.o.clear(f); },
-   trigger:function(){ this.o.trigger.apply(this.o,arguments); }
   })
   var colorChangeEvent=new EventHandlers();
   var colorPreviewEvent=new EventHandlers();
   var colorPickerAdapters=[];
-  window.getColorChangeEvent=function(){
+  rootobj.doColorChange=function(input,usealpha,button){
+    var c=((usealpha ? colorToRgba : colorToRgb)(input.value))||[0,0,0,255]
+    coloredInput(input,button)
+    colorChangeEvent.trigger(c,thisInput)
+  }
+  rootobj.doColorPreview=function(input,usealpha,button){
+    var c=((usealpha ? colorToRgba : colorToRgb)(thisInput.value))||[0,0,0,255]
+    coloredInput(input,button)
+    colorPreviewEvent.trigger(c,thisInput)
+  }
+  rootobj.getColorChangeEvent=function(){
     return new PublicEventHandlers(colorChangeEvent);
   }
-  window.getColorPreviewEvent=function(){
+  rootobj.getColorPreviewEvent=function(){
     return new PublicEventHandlers(colorPreviewEvent);
   }
-  window.getDefaultColorModel=function(){
+  rootobj.getDefaultColorModel=function(){
     return defaultModel;
   }
-  window.setDefaultColorModel=function(model){
+  rootobj.setDefaultColorModel=function(model){
     defaultModel=model;
   }
-  window.addColorPickerAdapter=function(adapter){
+  rootobj.addColorPickerAdapter=function(adapter){
     if(adapter){
      colorPickerAdapters[colorPickerAdapters.length]=adapter
     }
@@ -815,7 +824,7 @@ documentMouseOver:function(e){
        cp.setChangeCallback(function(cc){
          thisInput.value=rgbToColorDisplay(cc);
          coloredInput(thisInput,newInput);
-         getColorPreviewEvent().trigger(cc,thisInput)         
+         colorPreviewEvent.trigger(cc,thisInput)         
        })
        var checkclick=false
        var binder=new MethodBinder({})
@@ -826,7 +835,7 @@ documentMouseOver:function(e){
            removeListener(document,"click",binder.bind(docclick))
            removeListener(document,"mousedown",binder.bind(docdown))
            var cc=((usealpha ? colorToRgba : colorToRgb)(thisInput.value))||[0,0,0,255]
-           getColorChangeEvent().trigger(cc,thisInput)
+           colorChangeEvent.trigger(cc,thisInput)
        }
        var keydown=function(e){
          e=eventDetails(e)
@@ -852,19 +861,23 @@ documentMouseOver:function(e){
        addListener(document,"keydown",binder.bind(keydown))
    }
   }
-  window.createColorPickerButton=function(thisInput,usealpha){
+  rootobj.createColorPickerButton=function(thisInput,usealpha){
      var newInput=document.createElement("input")
      newInput.type="button"
      newInput.value="..."
      coloredInput(thisInput,newInput)
      try { newInput.style.textShadow="none" }catch(e){}
+     var bid=0; var bidstring=""; do {
+      bidstring="colorpickerbuttonid"+bid; bid+=1
+     } while(document.getElementById(bidstring))
+     newInput.id=bidstring; 
      thisInput.parentNode.insertBefore(newInput,thisInput)
      var chgfunc=function(newInput,thisInput,useAlpha){
       return function(){
           var c=((usealpha ? colorToRgba : colorToRgb)(thisInput.value))||[0,0,0,255]
           oldvalue=thisInput.value
           coloredInput(thisInput,newInput)
-          getColorChangeEvent().trigger(c,thisInput)
+          colorChangeEvent.trigger(c,thisInput)
      }}
      var oldvalue=thisInput.value
      var changefunc=chgfunc(newInput,thisInput,usealpha)
@@ -876,13 +889,13 @@ documentMouseOver:function(e){
      return newInput;     
   }
   window.setColorPicker=function(thisInput,usealpha,info){
-     if(!info)info=(defaultModel || HueSatVal);
+     if(!info)info=(defaultModel || rootobj.HueSatVal);
      setPatternAndTitle(thisInput,usealpha);
      for(var i=0;i<colorPickerAdapters.length;i++){
        if((colorPickerAdapters[i])(thisInput,usealpha,info)){return;}
      }
      useNativeColorPicker(thisInput,usealpha);
-     var newInput=createColorPickerButton(thisInput,usealpha);
+     var newInput=rootobj.createColorPickerButton(thisInput,usealpha);
      addListener(newInput,"click",onNewInputClickFunction(newInput,thisInput,info,usealpha))
   }
   addReadyListener(function(){ // set up color pickers
@@ -900,10 +913,7 @@ documentMouseOver:function(e){
     }
    }
   })
-})(window);
-/////////////////////////////////////////
-
-var HueLumSat={
+rootobj.HueLumSat={
  fromrgbcolor:function(rgb){ 
   var r=rgb[0];
   var g=rgb[1];
@@ -982,7 +992,7 @@ var HueLumSat={
  reversed:[true,false,false], // Hue, Lum, Sat
  indexes:[1,2,0] // SatxLum, and Hue on the side
 };
-var HueSatVal={
+rootobj.HueSatVal={
  fromrgbcolor:function(rgb){
   var r=rgb[0]/255.0;
   var g=rgb[1]/255.0;
@@ -1049,4 +1059,7 @@ maxes:[360,255,255],
   reversed:[true,false,true],
   indexes:[1,2,0]
  };
+})(window,window.PDColorPicker={});
+/////////////////////////////////////////
+
 
