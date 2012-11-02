@@ -479,23 +479,23 @@ function colorToRgba(x){
  var c;
  if(e=(/^#([A-Fa-f0-9]{2})([A-Fa-f0-9]{2})([A-Fa-f0-9]{2})$/.exec(x))){
   return [parseInt(e[1],16),parseInt(e[2],16),parseInt(e[3],16),255]
- } else if(e=(/^rgb\(\s*(-?\d+(?:\.\d+)?%)\s*,\s*(-?\d+(?:\.\d+)?%)\s*,\s*(-?\d+(?:\.\d+)?%)\s*\)$/.exec(x))){
+ } else if(e=(/^rgb\(\s*([\+\-]?\d+(?:\.\d+)?%)\s*,\s*([\+\-]?\d+(?:\.\d+)?%)\s*,\s*([\+\-]?\d+(?:\.\d+)?%)\s*\)$/.exec(x))){
   var r1=((c=parseFloat(e[1]))<0 ? 0 : (c>100 ? 100 : c))*255/100;
   var r2=((c=parseFloat(e[2]))<0 ? 0 : (c>100 ? 100 : c))*255/100;
   var r3=((c=parseFloat(e[3]))<0 ? 0 : (c>100 ? 100 : c))*255/100;
   return [r1,r2,r3,255]
- } else if(e=(/^rgb\(\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*\)$/.exec(x))){
+ } else if(e=(/^rgb\(\s*([\+\-]?\d+)\s*,\s*([\+\-]?\d+)\s*,\s*([\+\-]?\d+)\s*\)$/.exec(x))){
   var r1=((c=parseInt(e[1],10))<0 ? 0 : (c>255 ? 255 : c));
   var r2=((c=parseInt(e[2],10))<0 ? 0 : (c>255 ? 255 : c));
   var r3=((c=parseInt(e[3],10))<0 ? 0 : (c>255 ? 255 : c));
   return [r1,r2,r3,255]
- } else if(e=(/^rgba\(\s*(-?\d+(?:\.\d+)?%)\s*,\s*(-?\d+(?:\.\d+)?%)\s*,\s*(-?\d+(?:\.\d+)?%)\s*,\s*(-?\d+(?:\.\d+)?)\s*\)$/.exec(x))){
+ } else if(e=(/^rgba\(\s*([\+\-]?\d+(?:\.\d+)?%)\s*,\s*([\+\-]?\d+(?:\.\d+)?%)\s*,\s*([\+\-]?\d+(?:\.\d+)?%)\s*,\s*([\+\-]?\d+(?:\.\d+)?)\s*\)$/.exec(x))){
   var r1=((c=parseFloat(e[1]))<0 ? 0 : (c>100 ? 100 : c))*255/100;
   var r2=((c=parseFloat(e[2]))<0 ? 0 : (c>100 ? 100 : c))*255/100;
   var r3=((c=parseFloat(e[3]))<0 ? 0 : (c>100 ? 100 : c))*255/100;
   var r4=((c=parseFloat(e[4]))<0 ? 0 : (c>1 ? 1 : c))*255
   return [r1,r2,r3,r4]
- } else if(e=(/^rgba\(\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+(?:\.\d+)?)\s*\)$/.exec(x))){
+ } else if(e=(/^rgba\(\s*([\+\-]?\d+)\s*,\s*([\+\-]?\d+)\s*,\s*([\+\-]?\d+)\s*,\s*([\+\-]?\d+(?:\.\d+)?)\s*\)$/.exec(x))){
   var r1=((c=parseInt(e[1],10))<0 ? 0 : (c>255 ? 255 : c));
   var r2=((c=parseInt(e[2],10))<0 ? 0 : (c>255 ? 255 : c));
   var r3=((c=parseInt(e[3],10))<0 ? 0 : (c>255 ? 255 : c));
@@ -504,14 +504,14 @@ function colorToRgba(x){
  } else if(e=(/^#([A-Fa-f0-9]{1})([A-Fa-f0-9]{1})([A-Fa-f0-9]{1})$/.exec(x))){
   var a=parseInt(e[1],16); b=parseInt(e[2],16); c=parseInt(e[3],16);
   return [a+(a<<4),b+(b<<4),c+(c<<4),255]
- } else if(e=(/^hsl\(\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)%\s*,\s*(-?\d+(?:\.\d+)?)%\s*\)$/.exec(x))){
+ } else if(e=(/^hsl\(\s*([\+\-]?\d+(?:\.\d+)?)\s*,\s*([\+\-]?\d+(?:\.\d+)?)%\s*,\s*([\+\-]?\d+(?:\.\d+)?)%\s*\)$/.exec(x))){
   var r1=parseFloat(e[1]);
   if(r1<0||r1>=360)r1=(((r1%360)+360)%360);
   var r2=((c=parseFloat(e[3]))<0 ? 0 : (c>100 ? 100 : c))*255/100
   var r3=((c=parseFloat(e[2]))<0 ? 0 : (c>100 ? 100 : c))*255/100
   var rgb=hlsToRgb([r1,r2,r3])
   return [rgb[0],rgb[1],rgb[2],255]
- } else if(e=(/^hsla\(\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)%\s*,\s*(-?\d+(?:\.\d+)?)%\s*,\s*(-?\d+(?:\.\d+)?)\s*\)$/.exec(x))){
+ } else if(e=(/^hsla\(\s*([\+\-]?\d+(?:\.\d+)?)\s*,\s*([\+\-]?\d+(?:\.\d+)?)%\s*,\s*([\+\-]?\d+(?:\.\d+)?)%\s*,\s*([\+\-]?\d+(?:\.\d+)?)\s*\)$/.exec(x))){
   var r1=parseFloat(e[1]);
   if(r1<0||r1>=360)r1=(((r1%360)+360)%360);
   var r2=((c=parseFloat(e[3]))<0 ? 0 : (c>100 ? 100 : c))*255/100
