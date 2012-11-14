@@ -91,18 +91,21 @@ confinetoarea:function(area,xy){
  return nxy
 },
 getarea:function(x,y){
- var ret=this.areacache[y*this.maxWidth+x]
- if(ret!=null)return ret
+ var unrounded=(Math.round(x)==x && Math.round(y)==y)
+ if(unrounded){
+  var ret=this.areacache[y*this.maxWidth+x]
+  if(ret!=null)return ret
+ }
  for(var i=1;i<this.areas.length;i++){
   if(!this.areas[i])continue
   var dims=this.areas[i];
   if(x>=dims[0] && x<dims[0]+dims[2] &&
       y>=dims[1] && y<dims[1]+dims[3]){
-   this.areacache[y*this.maxWidth+x]=i;
+   if(unrounded)this.areacache[y*this.maxWidth+x]=i;
    return i  
   }
  }
- this.areacache[y*this.maxWidth+x]=this.areas.length;
+ if(unrounded)this.areacache[y*this.maxWidth+x]=this.areas.length;
  return this.areas.length;
 },
 rgbatorgb:function(rgba,shade){
@@ -514,20 +517,24 @@ initialize:function(info,parent,startingvalue,usealpha){
     this.overlay.style.position="absolute"
     this.overlay.style.cursor="crosshair"
     this.overlay.style.whiteSpace="nowrap"
-    var datapng="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAADN"+
-     "ElEQVRYR8XDL6jVegAA4F80Go1GecloEYyGG4wnCrdYLpgOpoPpYDlgOEE4RU5aOggrrgzDgitDWFlYcGEgC0"+
-     "MWhvzK3iePB4/H++Ofe68ffGH5Q3R2cnSwt7O1sbaytDA3M/Vk4tGDe3du3bj2wnNXnnnf38KXL18Wo7OT"+
-     "o4O9na2NtZWlhbmZqScTjx7cu3PrxrUXnrvyzPv+Fj5//rwYnZ0cHeztbG2srSwtzM1MPZl49ODenVs3rr3w3JV"+
-     "n3v86fPr0aTE6Ozk62NvZ2lhbWVqYm5l6MvHowb07t25ce+G5K8/+HD5+/LgYnZ0cHeztbG2srSwtzM1MPZ"+
-     "l49ODenVs3rr3w3NVfh6ZpFqOzk6ODvZ2tX9VWlhbmZqaeTDx6cO/OrRvXXnj+9+HDhw+L0dnJ0cHeztbG2"+
-     "srSwtzM1JOJRw/u3bl149qLfxrev3+/GJ2dHB3s7WxtrK0sLczNTD2ZePTg3p1bN67/bXj37t1idHZydLC3s7Wxtr"+
-     "K0MDcz9WTi0YN7d27d/Nfw9u3bxejs5Ohgb2drY21laWFuZurJxKMH9+7c/t/w5s2bxejs5Ohgb2drY21laWFuZu"+
-     "rJxKMH9+6+ZUiSZDE6Ozk62NvZ2lhbWVqYm5l68qujB/ffOrx+/XoxOjs5Otjb2dpYW1lamJuZejLx6OF7hlevXi"+
-     "1GZydHB3s7WxtrK0sLczNTTyYev3d4+fLlYnR2cnSwt7O1sbaytDA3M/Vk8iPDixcvFqOzk6ODvZ2tjbWVpYW5m"+
-     "amnHx2eP3++GJ2dHB3s7WxtrK0sLczNTH9mePbs2WJ0dnJ0sLeztbG2srQwN/vZ4enTp4vR2cnRwd7O1sbaytLC"+
-     "/DKGJ0+eLEZnJ0cHeztbG2srS4vLGh4/frwYnZ0cHeztbG2srSwvc1itVovR2cnRwd7O1sba6rKHR48eLUZnJ0cHezt"+
-     "bG+urGB4+fLgYnZ0cHeztbG2uanjw4MFidHZydLC3s73K4d69e4vR2cnRwd7uqoe7d+8uRmcnRwf76xju3LmzGJ"+
-     "2dHB2ua7h9+/ZidHZyvM7h1q1bi9HZ6bqHmzdvLkbnXzHcuHFjMf6qvwO7b11C5kb58QAAAABJRU5ErkJggg==";
+    var datapng="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAC2UlEQVRYR8XX"+
+"LY+kWABA0SdbtmxZtmTJkmVLlkQisUgkEotEIpFYJBKJRSKffJY9ZLPJZrMf"+
+"M7PdMzc5P+KG4/cSkZ2NlYWZiZGBno6WhpqKkoKcjBdPHty5ceXCB++8EUJK"+
+"6eAssrOxsjAzMTLQ09HSUFNRUpCT8eLJgzs3rlz44J23U4gxHiTOdjZWFmYm"+
+"RgZ6OloaaipKCnIyXjx5cOfGlQsfvP8h7Pt+kIicbawszEyMDPR0tDTUVJQU"+
+"5GS8ePLgzo0rFz7+LGzbdpCI7JytLMxMjAz0dLQ01FSUFORkvHjy4M6NK5e/"+
+"Cuu6HiQiOxtnCzMTIwM9HS0NNRUlBTkZL548uHPj+nfCsiwHicjOxsrZzMTI"+
+"QE9HS0NNRUlBTsaLJw/u3P5JmOf5IBHZ2VhZOJsYGejpaGmoqSgpyMl48eTB"+
+"/d+EaZoOEpGdjZWFmbORgZ6OloaaipKCnIwXTx7/JYzjeJCI7GysLMxMnA30"+
+"dLQ01FSUFORkvHh+izAMw0EisrOxsjAzMXLW09HSUFNRUpCT8fpWoe/7g0Rk"+
+"Z2NlYWZiZOCso6WhpqKkICf7HqHruoNEZGdjZWFmYmSg56yloaaipCD/XqFt"+
+"24NEZGdjZWFmYmSgp+OsoaaipPgRoWmag0RkZ2NlYWZiZKCno+WspqL8UaGu"+
+"64NEZGdjZWFmYmSgp6Ol4az6P0JVVQeJyM7GysLMxMhAT0dLQ/1/hbIsDxKR"+
+"nY2VhZmJkYGejpbmM4SiKA4SkZ2NlYWZiZGBno72s4Q8zw8SkZ2NlYWZiZGB"+
+"nu4zhSzLDhKRnY2VhZmJkYH+s4XX63WQiOxsrCzMTIwMXyE8n8+DRGRnY2Vh"+
+"ZmL8KuHxeBwkIjsbKwsz01cK9/v9IBHZ2VhZmL9auN1uB4nIzsbK8jOE6/V6"+
+"kIjsbKw/S7hcLgeJyM72M4WPj4+DRGT/2cL7+/tBIv4K4e3t7SD9KkEe+df5"+
+"DRYvoDzPYXK8AAAAAElFTkSuQmCC";
      this.overlay.innerHTML="<img src='"+datapng+"' width='"+(this.pixelWidth*areadims[2])+
         "' height='"+(this.pixelHeight*areadims[3])+"'>"
    } else {
@@ -576,7 +583,7 @@ initialize:function(info,parent,startingvalue,usealpha){
    addListener(document,"keydown",this.binder.bind(this.documentKeyDown))
    addListener(document,"mousedown",this.binder.bind(this.documentMouseDown))
    addListener(document,"mouseup",this.binder.bind(this.documentMouseUp))
-   addListener(document,"mousemove",this.binder.bind(this.documentMouseOver))
+   addListener(document,"mousemove",this.binder.bind(this.documentMouseMove))
 },
 documentKeyDown:function(e){
   e=eventDetails(e)
@@ -702,7 +709,7 @@ hide:function(){ // public
     removeListener(document,"keydown",this.binder.bind(this.documentKeyDown))
     removeListener(document,"mousedown",this.binder.bind(this.documentMouseDown))
     removeListener(document,"mouseup",this.binder.bind(this.documentMouseUp))
-    removeListener(document,"mousemove",this.binder.bind(this.documentMouseOver))
+    removeListener(document,"mousemove",this.binder.bind(this.documentMouseMove))
 },
 isInAreas3:function(o,x,y){
  var a=o.areacache[y*o.overalldims[0]+x]
@@ -744,15 +751,17 @@ updatedivs:function(area){
     else if(area!=null)areafunc=this.isInAreas3
     var maxwidth=this.overalldims[0];
     var maxheight=this.overalldims[1];
-    var areadims=this.colorspace.areadimensions(1)
-    var area1pure=[areadims[0]+areadims[2]-1,areadims[1]]
-    var purecolor=this.colorspace.getcolor(area1pure[0],area1pure[1],this.current);
-    this.colorbg.style.backgroundColor=rgbToColorHtml(purecolor)
+    if(this.isoriginal){
+     var areadims=this.colorspace.areadimensions(1)
+     var area1pure=[areadims[0]+areadims[2]-1,areadims[1]]
+     var purecolor=this.colorspace.getcolor(area1pure[0],area1pure[1],this.current);
+     this.colorbg.style.backgroundColor=rgbToColorHtml(purecolor)
+    }
     for(var y=0;y<maxheight;y++){
     for(var x=0;x<maxwidth;x++){
      if(this.isoriginal && this.cachedarea(this,x,y)==1){i++;continue;}
      if(!areafunc || areafunc(this,x,y)){
-      var bgc=(this.bgcolors[i]) ? this.bgcolors[i] : ""
+      var bgc=this.bgcolors[i]||""
       var cp=this.colorspace.getcolor(x,y,this.current)
       var c=rgbToColorHtml(cp)
       if(c!=bgc){
@@ -785,9 +794,6 @@ respondToMouseDown:function(e,xy,area){
      this.readjustpos(this.current)
      this.changed=true
      if(this.isdifferentcolor(oldcolor,this.current)){
-      var areasToUpdate=[3]
-      if(area==1)areasToUpdate=[2,3,6]
-      if(area==2)areasToUpdate=[1,3,6]
       this.updatedivs(area)
       var rgb=this.colorspace.torgbcolor(this.current)
       this.triggerChangeCallback(rgb)
@@ -807,7 +813,7 @@ documentMouseUp:function(e){
     this.handleclick=true
     this.currentArea=0
 },
-documentMouseOver:function(e){
+documentMouseMove:function(e){
     this.handleclick=true
     if(this.currentArea==1 || this.currentArea==2 || this.currentArea==6){
      e=eventDetails(e);
