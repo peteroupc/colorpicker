@@ -16,6 +16,7 @@
   this.matrixWidth=Math.floor(this.maxWidth*(this.usealpha ? 80 : 85)/100)
   this.matrixHeight=Math.floor(this.maxHeight*80/100)
   this.setupdimensions()
+  this.areacache=[]
  },
 fromrgbcolor:function(c){
  var ret=(typeof this.info.fromrgbcolor!="undefined" && this.info.fromrgbcolor) ? 
@@ -90,14 +91,18 @@ confinetoarea:function(area,xy){
  return nxy
 },
 getarea:function(x,y){
+ var ret=this.areacache[y*this.maxWidth+x]
+ if(ret!=null)return ret
  for(var i=1;i<this.areas.length;i++){
   if(!this.areas[i])continue
   var dims=this.areas[i];
   if(x>=dims[0] && x<dims[0]+dims[2] &&
       y>=dims[1] && y<dims[1]+dims[3]){
+   this.areacache[y*this.maxWidth+x]=i;
    return i  
   }
  }
+ this.areacache[y*this.maxWidth+x]=this.areas.length;
  return this.areas.length;
 },
 rgbatorgb:function(rgba,shade){
@@ -407,6 +412,13 @@ var mycolorpicker=subclass(Object,{
 initialize:function(info,parent,startingvalue,usealpha){
   var w=window
   this.binder=new MethodBinder(this)
+  this.isoriginal=(info==PDColorPicker.HueSatVal);
+  if(ieversionorbelow(6))this.isoriginal=false;
+  else if(!(navigator.userAgent.indexOf("MSIE ")>=0 ||
+   navigator.userAgent.indexOf("like Mac OS X")>=0 ||
+   navigator.userAgent.indexOf("Opera/")>=0 ||
+   navigator.userAgent.indexOf("AppleWebKit/")>=0 ||
+   navigator.userAgent.indexOf("Gecko/")>=0))this.isoriginal=false;
   this.faster=(navigator.userAgent.indexOf("Gecko/")>=0);
   this.pixelHeight=(this.faster ? 5 : 3)
   this.pixelWidth=(this.faster ? 5 : 3)
@@ -426,6 +438,8 @@ initialize:function(info,parent,startingvalue,usealpha){
   this.origPageX=getPageX(this.p)
   this.origPageY=getPageY(this.p)
   this.divs=[];
+  this.divstyles=[];
+  this.areacache=[]
   this.handleclick=false;
   var pxheight=this.pixelHeight+"px";
   var pxwidth=this.pixelWidth+"px";
@@ -452,13 +466,16 @@ initialize:function(info,parent,startingvalue,usealpha){
     tbl.style.color="transparent"
     tbl.style.fontSize="1px"
     var ihtml="<table cellspacing='0' cellpadding='0' style='border:none;'>"
+    var areadims=this.colorspace.areadimensions(1)
+    var area1pure=[areadims[0]+areadims[2]-1,areadims[1]]
     for(var y=0;y<this.overalldims[1];y++){
     ihtml+="<tr>"
     for(var x=0;x<this.overalldims[0];x++){
      ihtml+="<td width="+this.pixelWidth+" height="+this.pixelHeight+" style='"
      var area=this.colorspace.getarea(x,y)
      if(area==1 || area==2 || area==6)ihtml+="cursor:crosshair;" 
-     ihtml+="padding:0;font-size:1px;border:0;background-color:"+rgbToColorHtml(this.colorspace.getcolor(x,y,this.current))
+     ihtml+="padding:0;font-size:1px;border:0;background-color:"+
+        ((this.isoriginal && area==1) ? "transparent" : rgbToColorHtml(this.colorspace.getcolor(x,y,this.current)))
      ihtml+="'></td>"
     }
     ihtml+="</tr>"
@@ -473,13 +490,50 @@ initialize:function(info,parent,startingvalue,usealpha){
     var i=0;
     for(var y=0;y<this.overalldims[1];y++){
     for(var x=0;x<this.overalldims[0];x++){
-     this.divs[i]=tbl.rows[y].cells[x]; i+=1
+     this.divs[i]=tbl.rows[y].cells[x]; 
+     this.divstyles[i]=this.divs[i].style
+     i+=1
     }}
     this.tbl=tbl
    this.hexvalue=document.createElement("div")
    this.hexvalue.style.position="absolute"
    this.hexvalue.style.color="black"
    this.hexvalue.style.whiteSpace="nowrap"
+   this.colorbg=document.createElement("div")
+   this.overlay=document.createElement("div")
+   if(this.isoriginal){
+    this.colorbg.style.position="absolute"
+    this.colorbg.id="colorbg"
+    this.colorbg.style.cursor="crosshair"
+    this.colorbg.style.whiteSpace="nowrap"
+    areadims=this.colorspace.areadimensions(1)
+    this.colorbg.style.width=(this.pixelWidth*areadims[2])+"px"
+    this.colorbg.style.height=(this.pixelHeight*areadims[3])+"px"
+    this.colorbg.style.backgroundColor=rgbToColorHtml(this.colorspace.getcolor(area1pure[0],area1pure[1],this.current));
+    this.colorbg.innerHTML="&nbsp;"
+    this.overlay.style.position="absolute"
+    this.overlay.style.cursor="crosshair"
+    this.overlay.style.whiteSpace="nowrap"
+    var datapng="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAADN"+
+     "ElEQVRYR8XDL6jVegAA4F80Go1GecloEYyGG4wnCrdYLpgOpoPpYDlgOEE4RU5aOggrrgzDgitDWFlYcGEgC0"+
+     "MWhvzK3iePB4/H++Ofe68ffGH5Q3R2cnSwt7O1sbaytDA3M/Vk4tGDe3du3bj2wnNXnnnf38KXL18Wo7OT"+
+     "o4O9na2NtZWlhbmZqScTjx7cu3PrxrUXnrvyzPv+Fj5//rwYnZ0cHeztbG2srSwtzM1MPZl49ODenVs3rr3w3JV"+
+     "n3v86fPr0aTE6Ozk62NvZ2lhbWVqYm5l6MvHowb07t25ce+G5K8/+HD5+/LgYnZ0cHeztbG2srSwtzM1MPZ"+
+     "l49ODenVs3rr3w3NVfh6ZpFqOzk6ODvZ2tX9VWlhbmZqaeTDx6cO/OrRvXXnj+9+HDhw+L0dnJ0cHeztbG2"+
+     "srSwtzM1JOJRw/u3bl149qLfxrev3+/GJ2dHB3s7WxtrK0sLczNTD2ZePTg3p1bN67/bXj37t1idHZydLC3s7Wxtr"+
+     "K0MDcz9WTi0YN7d27d/Nfw9u3bxejs5Ohgb2drY21laWFuZurJxKMH9+7c/t/w5s2bxejs5Ohgb2drY21laWFuZu"+
+     "rJxKMH9+6+ZUiSZDE6Ozk62NvZ2lhbWVqYm5l68qujB/ffOrx+/XoxOjs5Otjb2dpYW1lamJuZejLx6OF7hlevXi"+
+     "1GZydHB3s7WxtrK0sLczNTTyYev3d4+fLlYnR2cnSwt7O1sbaytDA3M/Vk8iPDixcvFqOzk6ODvZ2tjbWVpYW5m"+
+     "amnHx2eP3++GJ2dHB3s7WxtrK0sLczNTH9mePbs2WJ0dnJ0sLeztbG2srQwN/vZ4enTp4vR2cnRwd7O1sbaytLC"+
+     "/DKGJ0+eLEZnJ0cHeztbG2srS4vLGh4/frwYnZ0cHeztbG2srSwvc1itVovR2cnRwd7O1sba6rKHR48eLUZnJ0cHezt"+
+     "bG+urGB4+fLgYnZ0cHeztbG2uanjw4MFidHZydLC3s73K4d69e4vR2cnRwd7uqoe7d+8uRmcnRwf76xju3LmzGJ"+
+     "2dHB2ua7h9+/ZidHZyvM7h1q1bi9HZ6bqHmzdvLkbnXzHcuHFjMf6qvwO7b11C5kb58QAAAABJRU5ErkJggg==";
+     this.overlay.innerHTML="<img src='"+datapng+"' width='"+(this.pixelWidth*areadims[2])+
+        "' height='"+(this.pixelHeight*areadims[3])+"'>"
+   } else {
+    this.colorbg.style.display="none"   
+    this.overlay.style.display="none"   
+   }
    var dims=this.colorspace.areadimensions(4) 
    this.hexvalue.style.height=(dims[3]*this.pixelHeight)+"px"
    this.resetdiv=document.createElement("div")
@@ -490,6 +544,8 @@ initialize:function(info,parent,startingvalue,usealpha){
    this.resetlink.setAttribute("href","javascript:void(null)")
    this.resetlink.innerHTML="Reset"
    this.resetdiv.appendChild(this.resetlink)
+   this.p.appendChild(this.colorbg)
+   this.p.appendChild(this.overlay)
    this.p.appendChild(this.resetdiv)
    this.p.appendChild(this.hexvalue)
    this.cursors=[]
@@ -616,6 +672,10 @@ readjustpos:function(current){
     var suggx;
     var sx=this.startx+this.padding;
     var sy=this.starty+this.padding;
+    setPageX(this.colorbg,sx)
+    setPageY(this.colorbg,sy)
+    setPageX(this.overlay,sx)
+    setPageY(this.overlay,sy)
     setPageX(this.hexvalue,sx+(dimshex[0]*this.pixelWidth))
     setPageY(this.hexvalue,sy+(dimshex[1]*this.pixelHeight))
     setPageX(this.resetdiv,sx+(dimsreset[0]*this.pixelWidth))
@@ -644,23 +704,57 @@ hide:function(){ // public
     removeListener(document,"mouseup",this.binder.bind(this.documentMouseUp))
     removeListener(document,"mousemove",this.binder.bind(this.documentMouseOver))
 },
-isInAreas:function(areas,x,y){
- if(!areas)return true
- var a=this.colorspace.getarea(x,y);
- for(var i=0;i<areas.length;i++){
-  if(areas[i]==a)return true
+isInAreas3:function(o,x,y){
+ var a=o.areacache[y*o.overalldims[0]+x]
+ if(a==null){
+  a=o.colorspace.getarea(x,y);
+  o.areacache[y*o.overalldims[0]+x]=a
  }
- return false
+ return (a==3)
 },
-updatedivs:function(areas){
+cachedarea:function(o,x,y){
+ var a=o.areacache[y*o.overalldims[0]+x]
+ if(a==null){
+  a=o.colorspace.getarea(x,y);
+  o.areacache[y*o.overalldims[0]+x]=a
+ }
+ return a;
+},
+isInAreas2:function(o,x,y){
+ var a=o.areacache[y*o.overalldims[0]+x]
+ if(a==null){
+  a=o.colorspace.getarea(x,y);
+  o.areacache[y*o.overalldims[0]+x]=a
+ }
+ return (a==1 || a==3 || a==6)
+},
+isInAreas1:function(o,x,y){
+ var a=o.areacache[y*o.overalldims[0]+x]
+ if(a==null){
+  a=o.colorspace.getarea(x,y);
+  o.areacache[y*o.overalldims[0]+x]=a
+ }
+ return (a==2 || a==3 || a==6)
+},
+updatedivs:function(area){
     var i=0;
+    var areafunc=null
+    if(area==1)areafunc=this.isInAreas1
+    else if(area==2)areafunc=this.isInAreas2
+    else if(area!=null)areafunc=this.isInAreas3
     var maxwidth=this.overalldims[0];
     var maxheight=this.overalldims[1];
+    var areadims=this.colorspace.areadimensions(1)
+    var area1pure=[areadims[0]+areadims[2]-1,areadims[1]]
+    var purecolor=this.colorspace.getcolor(area1pure[0],area1pure[1],this.current);
+    this.colorbg.style.backgroundColor=rgbToColorHtml(purecolor)
     for(var y=0;y<maxheight;y++){
     for(var x=0;x<maxwidth;x++){
-     if(this.isInAreas(areas,x,y)){
+     if(this.isoriginal && this.cachedarea(this,x,y)==1){i++;continue;}
+     if(!areafunc || areafunc(this,x,y)){
       var bgc=(this.bgcolors[i]) ? this.bgcolors[i] : ""
-      var c=rgbToColorHtml(this.colorspace.getcolor(x,y,this.current))
+      var cp=this.colorspace.getcolor(x,y,this.current)
+      var c=rgbToColorHtml(cp)
       if(c!=bgc){
        this.divs[i].style.backgroundColor=c
        this.bgcolors[i]=c
@@ -694,7 +788,7 @@ respondToMouseDown:function(e,xy,area){
       var areasToUpdate=[3]
       if(area==1)areasToUpdate=[2,3,6]
       if(area==2)areasToUpdate=[1,3,6]
-      this.updatedivs(areasToUpdate)
+      this.updatedivs(area)
       var rgb=this.colorspace.torgbcolor(this.current)
       this.triggerChangeCallback(rgb)
      }
@@ -748,8 +842,8 @@ documentMouseOver:function(e){
    initialize:function(o){ this.o=o; },
    add:function(f){ this.o.add(f); },
    remove:function(f){ this.o.remove(f); },
-   clear:function(f){ this.o.clear(f); },
-  })
+   clear:function(f){ this.o.clear(f); }
+  });
   var colorChangeEvent=new EventHandlers();
   var colorPreviewEvent=new EventHandlers();
   var colorPickerAdapters=[];

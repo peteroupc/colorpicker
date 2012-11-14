@@ -611,14 +611,15 @@ function rgbToColorHtml(r,g,b){
   }
  }
  var c;
+ var tbl=rgbToColorHtml.table;
  if(r!=null && g==null && b==null){
-   return "#"+rgbToColorHtml.table[((c=Math.round(r[0]))<0 ? 0 : (c>255 ? 255 : c))]
-        +rgbToColorHtml.table[((c=Math.round(r[1]))<0 ? 0 : (c>255 ? 255 : c))]
-        +rgbToColorHtml.table[((c=Math.round(r[2]))<0 ? 0 : (c>255 ? 255 : c))]
+   return "#"+tbl[((c=Math.round(r[0]))<0 ? 0 : (c>255 ? 255 : c))]
+        +tbl[((c=Math.round(r[1]))<0 ? 0 : (c>255 ? 255 : c))]
+        +tbl[((c=Math.round(r[2]))<0 ? 0 : (c>255 ? 255 : c))]
  } else {
-   return "#"+rgbToColorHtml.table[((c=Math.round(r))<0 ? 0 : (c>255 ? 255 : c))]
-        +rgbToColorHtml.table[((c=Math.round(g))<0 ? 0 : (c>255 ? 255 : c))]
-        +rgbToColorHtml.table[((c=Math.round(b))<0 ? 0 : (c>255 ? 255 : c))]
+   return "#"+tbl[((c=Math.round(r))<0 ? 0 : (c>255 ? 255 : c))]
+        +tbl[((c=Math.round(g))<0 ? 0 : (c>255 ? 255 : c))]
+        +tbl[((c=Math.round(b))<0 ? 0 : (c>255 ? 255 : c))]
  }
 }
 
