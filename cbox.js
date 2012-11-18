@@ -1,5 +1,5 @@
 /* This file is in the public domain. Peter O., 2012. http://upokecenter.dreamhosters.com 
-    Public domain dedication: http://creativecommons.org/publicdomain/zero/1.0/legalcode  */
+    Public domain dedication: http://creativecommons.org/publicdomain/zero/1.0/  */
 
 (function(window,rootobj){
 
@@ -8,6 +8,7 @@
   this.usealpha=usealpha;
   this.info=info;
   var faster=(navigator.userAgent.indexOf("Gecko/")>=0);
+  faster=true;
   this.maxWidth=(faster ? 36 : 60)
   this.maxHeight=(faster ? 36 : 60)
   this.areas=[]
@@ -125,7 +126,9 @@ getcolor:function(x,y,current){ // for display only
     var rgba=this.torgbcolor(this.changecolor(x,y,current))
     rgba[3]=(current[3]==null) ? 255 : current[3]; return rgba
  } else if(area==2){
-    var rgba=this.torgbcolor(this.changecolor(x,y,current))
+    var c=this.changecolor(x,y,current);
+    var rgba=this.info.torgbcolor(c)
+    if(rgba==c){ rgba=[c[0],c[1],c[2],0] }
     rgba[3]=(current[3]==null) ? 255 : current[3]; return rgba
  } else if(area==6){
     var rgba=this.torgbcolor(this.changecolor(x,y,current))     
@@ -284,7 +287,7 @@ namedColorsDatalist=function(){
 var useNativeColorPicker=function(thisInput,usealpha){
      if(!usealpha && supportsColorInput() && (thisInput.type=="text" || thisInput.type=="color")){
       var currentValue=thisInput.value
-      var datalistid=namedColorsDatalist2()
+      var datalistid=("list" in thisInput) ? namedColorsDatalist2() : ""
       var oldtitle=thisInput.getAttribute("title")
       var oldlist=thisInput.getAttribute("list") // list applies to "color" inputs differently from "text" inputs
       thisInput.type="color"
@@ -317,7 +320,7 @@ var useNativeColorPicker=function(thisInput,usealpha){
          thisInput.type="text"
          thisInput.title=oldtitle
          thisInput.setAttribute("list",oldlist)
-         // needed bec. Opera won't save value when changing to text
+         // needed because Opera won't save value when changing to text
          thisInput.value=rgbToColorDisplay(colorToRgb(currentValue)) 
          thisInput.focus()
          setTimeout(function(){ 
@@ -369,15 +372,16 @@ var useNativeColorPicker=function(thisInput,usealpha){
    return false
   }
   
-  
+var namedPattern=null
 var setPatternAndTitle=function(thisInput,usealpha){
      if(thisInput.tagName.toLowerCase()=="input" && thisInput.type=="text"){
       var numberOrPercent="\\s*-?(\\d+|\\d+(\\.\\d+)?%)\\s*"
       var number="\\s*-?\\d+(\\.\\d+)?\\s*"
       var percent="\\s*-?\\d+(\\.\\d+)?%\\s*"
-      var datalistid=namedColorsDatalist()
+      var datalistid=("list" in thisInput) ? namedColorsDatalist() : ""
       thisInput.setAttribute("list",datalistid)
-      var pattern=colorToRgba.namedColorsPattern()
+      if(!namedPattern)namedPattern=colorToRgba.namedColorsPattern();
+      var pattern=namedPattern
       // Use a faster pattern for Opera because Opera seems to verify the
       // pattern for every suggestion
       if(window.opera)pattern="[Yy][Ee][Ll][Ll][Oo][Ww](?:[Gg][Rr][Ee][Ee][Nn])?|[A-Wa-w][A-Za-z]{1,19}"
@@ -423,6 +427,7 @@ initialize:function(info,parent,startingvalue,usealpha){
    navigator.userAgent.indexOf("AppleWebKit/")>=0 ||
    navigator.userAgent.indexOf("Gecko/")>=0))this.isoriginal=false;
   this.faster=(navigator.userAgent.indexOf("Gecko/")>=0);
+  this.faster=true;
   this.pixelHeight=(this.faster ? 5 : 3)
   this.pixelWidth=(this.faster ? 5 : 3)
   this.p=parent
@@ -477,8 +482,8 @@ initialize:function(info,parent,startingvalue,usealpha){
      ihtml+="<td width="+this.pixelWidth+" height="+this.pixelHeight+" style='"
      var area=this.colorspace.getarea(x,y)
      if(area==1 || area==2 || area==6)ihtml+="cursor:crosshair;" 
-     ihtml+="padding:0;font-size:1px;border:0;background-color:"+
-        ((this.isoriginal && area==1) ? "transparent" : rgbToColorHtml(this.colorspace.getcolor(x,y,this.current)))
+     ihtml+="padding:0;font-size:1px;border:0"+
+        ((this.isoriginal && (area==1||(!this.usealpha && area==3))) ? "" : (";background-color:"+rgbToColorHtml(this.colorspace.getcolor(x,y,this.current))))
      ihtml+="'></td>"
     }
     ihtml+="</tr>"
@@ -503,38 +508,92 @@ initialize:function(info,parent,startingvalue,usealpha){
    this.hexvalue.style.color="black"
    this.hexvalue.style.whiteSpace="nowrap"
    this.colorbg=document.createElement("div")
+   this.swatchbg=document.createElement("div")
    this.overlay=document.createElement("div")
    if(this.isoriginal){
+    this.swatchbg.style.position="absolute"
+    this.swatchbg.style.cursor="crosshair"
+    this.swatchbg.style.whiteSpace="nowrap"
+    areadims=this.colorspace.areadimensions(3)
+    this.swatchbg.style.width=(this.pixelWidth*areadims[2])+"px"
+    this.swatchbg.style.height=(this.pixelHeight*areadims[3])+"px"
+    if(this.usealpha)this.swatchbg.style.display="none"
+    this.swatchbg.style.backgroundColor=rgbToColorHtml(this.origvalue);
     this.colorbg.style.position="absolute"
-    this.colorbg.id="colorbg"
     this.colorbg.style.cursor="crosshair"
     this.colorbg.style.whiteSpace="nowrap"
     areadims=this.colorspace.areadimensions(1)
     this.colorbg.style.width=(this.pixelWidth*areadims[2])+"px"
     this.colorbg.style.height=(this.pixelHeight*areadims[3])+"px"
     this.colorbg.style.backgroundColor=rgbToColorHtml(this.colorspace.getcolor(area1pure[0],area1pure[1],this.current));
-    this.colorbg.innerHTML="&nbsp;"
     this.overlay.style.position="absolute"
     this.overlay.style.cursor="crosshair"
     this.overlay.style.whiteSpace="nowrap"
-    var datapng="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAC2UlEQVRYR8XX"+
-"LY+kWABA0SdbtmxZtmTJkmVLlkQisUgkEotEIpFYJBKJRSKffJY9ZLPJZrMf"+
-"M7PdMzc5P+KG4/cSkZ2NlYWZiZGBno6WhpqKkoKcjBdPHty5ceXCB++8EUJK"+
-"6eAssrOxsjAzMTLQ09HSUFNRUpCT8eLJgzs3rlz44J23U4gxHiTOdjZWFmYm"+
-"RgZ6OloaaipKCnIyXjx5cOfGlQsfvP8h7Pt+kIicbawszEyMDPR0tDTUVJQU"+
-"5GS8ePLgzo0rFz7+LGzbdpCI7JytLMxMjAz0dLQ01FSUFORkvHjy4M6NK5e/"+
-"Cuu6HiQiOxtnCzMTIwM9HS0NNRUlBTkZL548uHPj+nfCsiwHicjOxsrZzMTI"+
-"QE9HS0NNRUlBTsaLJw/u3P5JmOf5IBHZ2VhZOJsYGejpaGmoqSgpyMl48eTB"+
-"/d+EaZoOEpGdjZWFmbORgZ6OloaaipKCnIwXTx7/JYzjeJCI7GysLMxMnA30"+
-"dLQ01FSUFORkvHh+izAMw0EisrOxsjAzMXLW09HSUFNRUpCT8fpWoe/7g0Rk"+
-"Z2NlYWZiZOCso6WhpqKkICf7HqHruoNEZGdjZWFmYmSg56yloaaipCD/XqFt"+
-"24NEZGdjZWFmYmSgp+OsoaaipPgRoWmag0RkZ2NlYWZiZKCno+WspqL8UaGu"+
-"64NEZGdjZWFmYmSgp6Ol4az6P0JVVQeJyM7GysLMxMhAT0dLQ/1/hbIsDxKR"+
-"nY2VhZmJkYGejpbmM4SiKA4SkZ2NlYWZiZGBno72s4Q8zw8SkZ2NlYWZiZGB"+
-"nu4zhSzLDhKRnY2VhZmJkYH+s4XX63WQiOxsrCzMTIwMXyE8n8+DRGRnY2Vh"+
-"ZmL8KuHxeBwkIjsbKwsz01cK9/v9IBHZ2VhZmL9auN1uB4nIzsbK8jOE6/V6"+
-"kIjsbKw/S7hcLgeJyM72M4WPj4+DRGT/2cL7+/tBIv4K4e3t7SD9KkEe+df5"+
-"DRYvoDzPYXK8AAAAAElFTkSuQmCC";
+    var datapng="data:image/png;base64,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"+
+"E35nOQAAAABJRU5ErkJggg==";
      this.overlay.innerHTML="<img src='"+datapng+"' width='"+(this.pixelWidth*areadims[2])+
         "' height='"+(this.pixelHeight*areadims[3])+"'>"
    } else {
@@ -551,6 +610,7 @@ initialize:function(info,parent,startingvalue,usealpha){
    this.resetlink.setAttribute("href","javascript:void(null)")
    this.resetlink.innerHTML="Reset"
    this.resetdiv.appendChild(this.resetlink)
+   this.p.appendChild(this.swatchbg)
    this.p.appendChild(this.colorbg)
    this.p.appendChild(this.overlay)
    this.p.appendChild(this.resetdiv)
@@ -672,6 +732,7 @@ getxy:function(evt,pagex,pagey,pixelWidth,pixelHeight){
 readjustpos:function(current){
     var curpos=this.colorspace.colortopos(current)
     var dimsmatrix=this.colorspace.areadimensions(1) // matrix dimensions
+    var dimsswatch=this.colorspace.areadimensions(3) // matrix dimensions
     var dimsside=this.colorspace.areadimensions(2) // side dimensions
     var dimsalpha=this.colorspace.areadimensions(6) // side dimensions
     var dimshex=this.colorspace.areadimensions(4) // color value
@@ -679,10 +740,12 @@ readjustpos:function(current){
     var suggx;
     var sx=this.startx+this.padding;
     var sy=this.starty+this.padding;
-    setPageX(this.colorbg,sx)
-    setPageY(this.colorbg,sy)
-    setPageX(this.overlay,sx)
-    setPageY(this.overlay,sy)
+    setPageX(this.swatchbg,sx+(dimsswatch[0]*this.pixelWidth))
+    setPageY(this.swatchbg,sy+(dimsswatch[1]*this.pixelHeight))
+    setPageX(this.colorbg,sx+(dimsmatrix[0]*this.pixelWidth))
+    setPageY(this.colorbg,sy+(dimsmatrix[1]*this.pixelHeight))
+    setPageX(this.overlay,sx+(dimsmatrix[0]*this.pixelWidth))
+    setPageY(this.overlay,sy+(dimsmatrix[1]*this.pixelHeight))
     setPageX(this.hexvalue,sx+(dimshex[0]*this.pixelWidth))
     setPageY(this.hexvalue,sy+(dimshex[1]*this.pixelHeight))
     setPageX(this.resetdiv,sx+(dimsreset[0]*this.pixelWidth))
@@ -746,9 +809,10 @@ isInAreas1:function(o,x,y){
 updatedivs:function(area){
     var i=0;
     var areafunc=null
+    var justswatch=false;
     if(area==1)areafunc=this.isInAreas1
-    else if(area==2)areafunc=this.isInAreas2
-    else if(area!=null)areafunc=this.isInAreas3
+    else if(area==2){justswatch=true; areafunc=this.isInAreas2}
+    else if(area!=null){justswatch=true; areafunc=this.isInAreas3}
     var maxwidth=this.overalldims[0];
     var maxheight=this.overalldims[1];
     if(this.isoriginal){
@@ -756,10 +820,18 @@ updatedivs:function(area){
      var area1pure=[areadims[0]+areadims[2]-1,areadims[1]]
      var purecolor=this.colorspace.getcolor(area1pure[0],area1pure[1],this.current);
      this.colorbg.style.backgroundColor=rgbToColorHtml(purecolor)
+     this.swatchbg.style.backgroundColor=rgbToColorHtml(this.colorspace.torgbcolor(this.current))
+     if(justswatch && !this.usealpha){
+      return
+     }
     }
     for(var y=0;y<maxheight;y++){
     for(var x=0;x<maxwidth;x++){
-     if(this.isoriginal && this.cachedarea(this,x,y)==1){i++;continue;}
+     if(this.isoriginal){
+      var ca=this.cachedarea(this,x,y);
+      if(!this.usealpha && ca==3){i++;continue;}
+      if(ca==1){i++;continue;}
+     }
      if(!areafunc || areafunc(this,x,y)){
       var bgc=this.bgcolors[i]||""
       var cp=this.colorspace.getcolor(x,y,this.current)
@@ -896,12 +968,28 @@ documentMouseMove:function(e){
     document.body.removeChild(f)
     return _supportsColorInput;
   }
+  var removeFilter=function(o,filter){
+   if("filter" in o.style){
+    filter=filter.toLowerCase();
+    var f=(o.style.filter||"").split(/\)\s*,\s*/);
+    var ff=[];
+    for(var i=0;i<f.length;i++){
+     if((f[i]||"").length>0 && !(f[i].match(new RegExp("^progid\\:dximagetransform\\.microsoft\\."+filter+"\\s*\\(","i")))){
+      ff[ff.length]=f[i]+")";
+     }
+    }
+    o.style.filter=ff.join(",");
+   }
+  }
   var coloredInput=function(input,button){
    var c=(colorToRgba(input.value)||[0,0,0,255])
    input.style.backgroundColor=rgbToColorHtml(c)
+   input.style.backgroundImage="none"
+   removeFilter(input,"gradient")//IE's filter takes precedence over background, so remove
    input.style.color=(isRgbDark(c)) ? "white" : "black"
    if(button){
     button.style.backgroundImage="none"
+    removeFilter(button,"gradient")//IE's filter takes precedence over background, so remove
     try {
      button.style.backgroundColor=rgbToColor(c)
     } catch(e){
@@ -990,6 +1078,7 @@ documentMouseMove:function(e){
   }
   window.setColorPicker=function(thisInput,usealpha,info){
      if(!info)info=(defaultModel || rootobj.HueSatVal);
+     try { thisInput.style.textShadow="none" }catch(e){}
      setPatternAndTitle(thisInput,usealpha);
      for(var i=0;i<colorPickerAdapters.length;i++){
        if((colorPickerAdapters[i])(thisInput,usealpha,info)){return;}
@@ -1005,10 +1094,10 @@ documentMouseMove:function(e){
    for(var i=0;i<inputs.length;i++){ inputsArray[inputsArray.length]=inputs[i] }
    for(var i=0;i<inputsArray.length;i++){
     var thisInput=inputsArray[i]
-    if(thisInput.type=="text" && thisInput.id.indexOf("color_")==0){
+    if((thisInput.type=="text" || thisInput.type=="color") && thisInput.id.indexOf("color_")==0){
      setColorPicker(thisInput,false)
     }
-    if(thisInput.type=="text" && thisInput.id.indexOf("acolor_")==0){
+    if((thisInput.type=="text" || thisInput.type=="color") && thisInput.id.indexOf("acolor_")==0){
      setColorPicker(thisInput,true)
     }
    }

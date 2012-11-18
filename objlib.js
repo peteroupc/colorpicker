@@ -1,5 +1,5 @@
 /* This file is in the public domain. Peter O., 2012. http://upokecenter.dreamhosters.com 
-    Public domain dedication: http://creativecommons.org/publicdomain/zero/1.0/legalcode  */
+    Public domain dedication: http://creativecommons.org/publicdomain/zero/1.0/  */
 
 // Calculates the actual style of an HTML element.
 // getComputedValue(elem,prop) 
@@ -7,15 +7,17 @@
 // prop - A CSS property (such as 'background-color')
 function getComputedValue(elem,prop){ // expects syntax like 'background-color'
  if(!elem)return null
-// if(console)console.log([elem.tagName,elem.className,elem.id,prop])
- if(document.defaultView && document.defaultView.getComputedStyle){
+ if(!("gcs" in getComputedValue) && document.defaultView && document.defaultView.getComputedStyle){
   // expects syntax like 'background-color'
-  return document.defaultView.getComputedStyle(elem,null).getPropertyValue(prop);
+  // cache value, since function may be slow if called many times
+  getComputedValue.gcs=document.defaultView
  }
- if(window.getComputedStyle){
+ if(!("gcs" in getComputedValue) && window.getComputedStyle){
   // expects syntax like 'background-color'
-  return window.getComputedStyle(elem,null).getPropertyValue(prop);
+  getComputedValue.gcs=window
  }
+ if("gcs" in getComputedValue)
+  return getComputedValue.gcs.getComputedStyle(elem,null).getPropertyValue(prop);
  if(elem){
   try {
    if(typeof(elem.currentStyle)!="undefined"){
@@ -144,7 +146,7 @@ function addListener(o,e,f){
   if(!o)return
   if(e=="mousewheel" && navigator.userAgent.indexOf("Gecko/")>=0)
    e="DOMMouseScroll"
-  if(o.addEventListener)
+  if("addEventListener" in o)
    o.addEventListener(e,f,false);
   else if(o.attachEvent)
    o.attachEvent("on"+e,f);
@@ -155,7 +157,7 @@ function removeListener(o,e,f){
   if(e=="mousewheel" && navigator.userAgent.indexOf("Gecko/")>=0)
    e="DOMMouseScroll"
   try {
-   if(o.removeEventListener){
+   if("removeEventListener" in o){
     o.removeEventListener(e,f,false);
     return
    }
@@ -345,18 +347,20 @@ window.addReadyListener=function(func){
  if(isDomContent || document.readyState=="complete"){
   func();
  } else if(document.addEventListener){
+  var functionCalled=false
   addListener(document,"DOMContentLoaded",function(){
-    isDomContent=true;func();
-  },false);
+//    console.log("DOMContent")
+    if(!functionCalled){isDomContent=true;functionCalled=true;func();}
+  });
   addListener(window,'load',function(){
-    if(!isDomContent)func();
+//    console.log("DOMContent2")
+    if(!functionCalled){isDomContent=true;functionCalled=true;func();}
   });
  } else if(navigator.userAgent.indexOf("AppleWebKit")>0){
    var readyCheck = setInterval(function(){
      if (document.readyState=="complete"||document.readyState=="loaded"){
       clearInterval(readyCheck);
       readyCheck = null;
-      func()
    }},10);
  } else if(ieversionorbelow(7) && window==top){
    var readyCheck = setInterval(function(){
