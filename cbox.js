@@ -970,30 +970,33 @@ documentMouseMove:function(e){
   }
   var removeFilter=function(o,filter){
    if("filter" in o.style){
-    filter=filter.toLowerCase();
-    var f=(o.style.filter||"").split(/\)\s*,\s*/);
+    var fs=(o.style.filter||"")
+    if(fs.length==0||fs=="none")return
+    var f=split(/\)\s*,\s*/);
     var ff=[];
+    var removed=false
+    filter=filter.toLowerCase();
     for(var i=0;i<f.length;i++){
-     if((f[i]||"").length>0 && !(f[i].match(new RegExp("^progid\\:dximagetransform\\.microsoft\\."+filter+"\\s*\\(","i")))){
-      ff[ff.length]=f[i]+")";
+     if((f[i]||"").length>0){
+      if(!(f[i].match(new RegExp("^progid\\:dximagetransform\\.microsoft\\."+filter+"\\s*\\(","i")))){
+       ff[ff.length]=f[i]+")";
+      } else removed=true
      }
     }
-    o.style.filter=ff.join(",");
+    if(removed)o.style.filter=ff.join(",");
    }
   }
   var coloredInput=function(input,button){
    var c=(colorToRgba(input.value)||[0,0,0,255])
-   input.style.backgroundColor=rgbToColorHtml(c)
-   input.style.backgroundImage="none"
+   input.style.background=rgbToColorHtml(c)
    removeFilter(input,"gradient")//IE's filter takes precedence over background, so remove
    input.style.color=(isRgbDark(c)) ? "white" : "black"
    if(button){
-    button.style.backgroundImage="none"
     removeFilter(button,"gradient")//IE's filter takes precedence over background, so remove
     try {
-     button.style.backgroundColor=rgbToColor(c)
+     button.style.background=rgbToColor(c)
     } catch(e){
-     button.style.backgroundColor=rgbToColorHtml(c) // RGBA not supported
+     button.style.background=rgbToColorHtml(c) // RGBA not supported
     }
     button.style.color=(isRgbDark(c)) ? "white" : "black"  
    }

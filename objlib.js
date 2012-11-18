@@ -84,8 +84,8 @@ function setPageX(e,x){
  if(!e||isNaN(x))return
  var estyle=e.style
  if (estyle){
-   if(typeof estyle.left!="undefined")estyle.left=x+'px';
-   else if(typeof estyle.pixelLeft!="undefined")estyle.pixelLeft=x+'px';
+   if("left" in estyle)estyle.left=x+'px';
+   else if("pixelLeft" in estyle)estyle.pixelLeft=x+'px';
  } else if(typeof e.left!="undefined") {
     e.left=x;
  }
@@ -95,8 +95,8 @@ function setPageY(e,x){
  if(!e||isNaN(x))return
  var estyle=e.style
  if (estyle){
-   if(typeof estyle.top!="undefined")estyle.top=x+'px';
-   else if(typeof estyle.pixelTop!="undefined")estyle.pixelTop=x+'px';
+   if("top" in estyle)estyle.top=x+'px';
+   else if("pixelTop" in estyle)estyle.pixelTop=x+'px';
  } else if(typeof e.top!="undefined") {
     e.top=x;
  }
