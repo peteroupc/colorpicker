@@ -22,16 +22,22 @@ function getComputedValue(elem,prop){ // expects syntax like 'background-color'
   try {
    if(typeof(elem.currentStyle)!="undefined"){
     // expects syntax like 'backgroundColor'
-    if(prop=="float")prop="styleFloat";
-    prop=prop.replace(/-([a-z])/g,function(a,b){return b.toUpperCase();})
+    if(prop=="float"){
+     prop=("cssFloat" in elem.currentStyle) ? "cssFloat" : "styleFloat";
+    } else {
+     prop=prop.replace(/-([a-z])/g,function(a,b){return b.toUpperCase();})
+    }
     return elem.currentStyle[prop];
    }
   } catch(e){}
   // Just get regular style
   if(elem.style){
    // expects syntax like 'backgroundColor'
-   if(prop=="float")prop="styleFloat";
-   prop=prop.replace(/-([a-z])/g,function(a,b){return b.toUpperCase();})
+    if(prop=="float"){
+     prop=("cssFloat" in elem.currentStyle) ? "cssFloat" : "styleFloat";
+    } else {
+     prop=prop.replace(/-([a-z])/g,function(a,b){return b.toUpperCase();})
+    }
    return elem.style[prop];
   }
  }
