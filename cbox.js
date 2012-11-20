@@ -2,7 +2,6 @@
     Public domain dedication: http://creativecommons.org/publicdomain/zero/1.0/  */
 
 (function(window,rootobj){
-
  var ColorSpace=subclass(Object,{
   initialize:function(info,usealpha){
   this.usealpha=usealpha;
