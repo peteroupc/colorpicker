@@ -11,16 +11,17 @@ function getComputedValue(elem,prop){ // expects syntax like 'background-color'
   // expects syntax like 'background-color'
   // cache value, since function may be slow if called many times
   getComputedValue.gcs=document.defaultView
- }
- if(!("gcs" in getComputedValue) && window.getComputedStyle){
+ } else if(!("gcs" in getComputedValue) && window.getComputedStyle){
   // expects syntax like 'background-color'
   getComputedValue.gcs=window
+ } else if(!("gcs" in getComputedValue)){
+  getComputedValue.gcs=null
  }
- if("gcs" in getComputedValue)
+ if("gcs" in getComputedValue && getComputedValue.gcs!=null)
   return getComputedValue.gcs.getComputedStyle(elem,null).getPropertyValue(prop);
  if(elem){
   try {
-   if(typeof(elem.currentStyle)!="undefined"){
+   if("currentStyle" in elem){
     // expects syntax like 'backgroundColor'
     if(prop=="float"){
      prop=("cssFloat" in elem.currentStyle) ? "cssFloat" : "styleFloat";
@@ -31,7 +32,7 @@ function getComputedValue(elem,prop){ // expects syntax like 'background-color'
    }
   } catch(e){}
   // Just get regular style
-  if(elem.style){
+  if("style" in elem){
    // expects syntax like 'backgroundColor'
     if(prop=="float"){
      prop=("cssFloat" in elem.currentStyle) ? "cssFloat" : "styleFloat";

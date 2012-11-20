@@ -972,7 +972,7 @@ documentMouseMove:function(e){
    if("filter" in o.style){
     var fs=(o.style.filter||"")
     if(fs.length==0||fs=="none")return
-    var f=split(/\)\s*,\s*/);
+    var f=fs.split(/\)\s*,\s*/);
     var ff=[];
     var removed=false
     filter=filter.toLowerCase();
