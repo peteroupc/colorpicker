@@ -381,15 +381,20 @@ var setPatternAndTitle=function(thisInput,usealpha){
       thisInput.setAttribute("list",datalistid)
       if(!namedPattern)namedPattern=colorToRgba.namedColorsPattern();
       var pattern=namedPattern
-      // Use a faster pattern for Opera because Opera seems to verify the
-      // pattern for every suggestion
-      if(window.opera)pattern="[Yy][Ee][Ll][Ll][Oo][Ww](?:[Gg][Rr][Ee][Ee][Nn])?|[A-Wa-w][A-Za-z]{1,19}"
-      pattern+="|#[A-Fa-f0-9]{3}|#[A-Fa-f0-9]{6}"+
+      var patternother="|#[A-Fa-f0-9]{6,6}|#[A-Fa-f0-9]{3,3}"+
           "|rgb\\("+numberOrPercent+","+numberOrPercent+","+numberOrPercent+"\\)"+
           "|hsl\\("+number+","+percent+","+percent+"\\)"
       if(usealpha){
-          pattern+="|rgba\\("+numberOrPercent+","+numberOrPercent+","+numberOrPercent+","+number+"\\)"+
+          patternother+="|rgba\\("+numberOrPercent+","+numberOrPercent+","+numberOrPercent+","+number+"\\)"+
                       "|hsla\\("+number+","+percent+","+percent+","+number+"\\)"
+      }
+      pattern+=patternother;
+      if(window.opera && supportsPattern()){
+       // In Opera, use a faster pattern while focused, because Opera seems to verify the
+       // pattern for every suggestion
+       var patternstart="[Yy][Ee][Ll][Ll][Oo][Ww](?:[Gg][Rr][Ee][Ee][Nn])?|[A-Wa-w][A-Za-z]{1,19}"
+       addListener(thisInput,"focus",function(){ this.setAttribute("pattern",patternstart+patternother) })
+       addListener(thisInput,"blur",function(){ this.setAttribute("pattern",pattern) })
       }
       var n=window.navigator;
       var lang=(("userLanguage" in n) ? n.userLanguage : (("language" in n) ? n.language : ""));
@@ -970,7 +975,9 @@ documentMouseMove:function(e){
   var removeFilter=function(o,filter){
    if("filter" in o.style){
     var fs=(o.style.filter||"")
-    if(fs.length==0||fs=="none")return
+    if(fs=="none")return
+    fs=(getComputedValue(o,"filter")||"")
+    if(fs=="none"||fs=="")return
     var f=fs.split(/\)\s*,\s*/);
     var ff=[];
     var removed=false
@@ -982,24 +989,42 @@ documentMouseMove:function(e){
       } else removed=true
      }
     }
-    if(removed)o.style.filter=ff.join(",");
+    var newfs=ff.join(",")
+    if(newfs.length==0)newfs="none"
+    if(fs!=newfs)o.style.filter=newfs;
    }
+  }
+  var dobgcolordelayfunc=function(o,val){
+   return (function(){
+      if(o.getAttribute("data-currentbgcolor")==val){ 
+       try { o.style.background=val;
+       } catch(e){ o.style.background=rgbToColorHtml(colorToRgba(val)) }
+       o.setAttribute("data-currentbgcolor","")
+      } 
+     })
+  }
+  var nobgcolordelay=null;
+  var dobgcolordelay=function(o,val){
+   if(nobgcolordelay==null)
+    nobgcolordelay=(!ieversionorbelow(8))
+   if(nobgcolordelay){
+    o.style.background=val; return
+   }
+   o.setAttribute("data-currentbgcolor",val)
+   setTimeout(dobgcolordelayfunc(o,val),100)
   }
   var coloredInput=function(input,button){
    var c=(colorToRgba(input.value)||[0,0,0,255])
-   input.style.background=rgbToColorHtml(c)
+   dobgcolordelay(input,rgbToColorHtml(c))
    removeFilter(input,"gradient")//IE's filter takes precedence over background, so remove
    input.style.color=(isRgbDark(c)) ? "white" : "black"
    if(button){
     removeFilter(button,"gradient")//IE's filter takes precedence over background, so remove
-    try {
-     button.style.background=rgbToColor(c)
-    } catch(e){
-     button.style.background=rgbToColorHtml(c) // RGBA not supported
-    }
+    dobgcolordelay(button,rgbToColor(c))
     button.style.color=(isRgbDark(c)) ? "white" : "black"  
    }
   }
+  coloredInput.norgba=false
   function onNewInputClickFunction(newInput,thisInput,info,usealpha){
    return function(){
        var o=document.createElement("div")
@@ -1062,6 +1087,7 @@ documentMouseMove:function(e){
      } while(document.getElementById(bidstring))
      newInput.id=bidstring; 
      thisInput.parentNode.insertBefore(newInput,thisInput)
+     removeFilter(newInput,"gradient")// try again in case filter wasn't removed
      var chgfunc=function(newInput,thisInput,useAlpha){
       return function(){
           var c=((usealpha ? colorToRgba : colorToRgb)(thisInput.value))||[0,0,0,255]
