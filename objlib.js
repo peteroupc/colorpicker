@@ -549,6 +549,8 @@ colorToRgba.namedColorsPattern=function(){
    b[b.length]=o;if(o.indexOf("gray")>=0)b[b.length]=o.replace("gray","grey")
   }
  }
+ // for IE10 compatibility, sort by descending length
+ b.sort(function(x,y){ return (y.length-x.length) })
  var ret=""
  for(var i=0;i<b.length;i++){
   var buc=b[i].toUpperCase();
