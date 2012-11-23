@@ -241,7 +241,7 @@ namedColorsDatalist=function(){
     var v=colorToRgba.namedColors[o]
     if(typeof v=="string" && o.indexOf("grey")<0){
      var exists=false;
-     var c=PDColorPicker.HueLumSat.fromrgbcolor(colorToRgb(v))
+     var c=rootobj.HueLumSat.fromrgbcolor(colorToRgb(v))
      for(var i=0;i<colors.length;i++){
       var d=colors[i];if(d[0]==c[0]&&d[1]==c[1]&&
           d[2]==c[2]){ exists=true;break;}
@@ -252,7 +252,7 @@ namedColorsDatalist=function(){
    for(var r=0;r<=255;r+=85){
    for(var g=0;g<=255;g+=85){
    for(var b=0;b<=255;b+=85){
-     var c=PDColorPicker.HueLumSat.fromrgbcolor([r,g,b])
+     var c=rootobj.HueLumSat.fromrgbcolor([r,g,b])
      for(var i=0;i<colors.length;i++){
       var d=colors[i];if(d[0]==c[0]&&d[1]==c[1]&&
           d[2]==c[2]){ exists=true;break;}
@@ -270,7 +270,7 @@ namedColorsDatalist=function(){
    var datalist=document.createElement("datalist")
    for(var i=0;i<colors.length;i++){
     var o=document.createElement("option")
-    o.value=rgbToColorHtml(PDColorPicker.HueLumSat.torgbcolor(colors[i]))
+    o.value=rgbToColorHtml(rootobj.HueLumSat.torgbcolor(colors[i]))
     datalist.appendChild(o)
    }
    var datalistid=""; var dlid=0;
@@ -381,15 +381,20 @@ var setPatternAndTitle=function(thisInput,usealpha){
       thisInput.setAttribute("list",datalistid)
       if(!namedPattern)namedPattern=colorToRgba.namedColorsPattern();
       var pattern=namedPattern
-      // Use a faster pattern for Opera because Opera seems to verify the
-      // pattern for every suggestion
-      if(window.opera)pattern="[Yy][Ee][Ll][Ll][Oo][Ww](?:[Gg][Rr][Ee][Ee][Nn])?|[A-Wa-w][A-Za-z]{1,19}"
-      pattern+="|#[A-Fa-f0-9]{3}|#[A-Fa-f0-9]{6}"+
+      var patternother="|#[A-Fa-f0-9]{6,6}|#[A-Fa-f0-9]{3,3}"+
           "|rgb\\("+numberOrPercent+","+numberOrPercent+","+numberOrPercent+"\\)"+
           "|hsl\\("+number+","+percent+","+percent+"\\)"
       if(usealpha){
-          pattern+="|rgba\\("+numberOrPercent+","+numberOrPercent+","+numberOrPercent+","+number+"\\)"+
+          patternother+="|rgba\\("+numberOrPercent+","+numberOrPercent+","+numberOrPercent+","+number+"\\)"+
                       "|hsla\\("+number+","+percent+","+percent+","+number+"\\)"
+      }
+      pattern+=patternother;
+      if(window.opera && supportsPattern()){
+       // In Opera, use a faster pattern while focused, because Opera seems to verify the
+       // pattern for every suggestion
+       var patternstart="[Yy][Ee][Ll][Ll][Oo][Ww](?:[Gg][Rr][Ee][Ee][Nn])?|[A-Wa-w][A-Za-z]{1,19}"
+       addListener(thisInput,"focus",function(){ this.setAttribute("pattern",patternstart+patternother) })
+       addListener(thisInput,"blur",function(){ this.setAttribute("pattern",pattern) })
       }
       var n=window.navigator;
       var lang=(("userLanguage" in n) ? n.userLanguage : (("language" in n) ? n.language : ""));
@@ -418,7 +423,7 @@ var mycolorpicker=subclass(Object,{
 initialize:function(info,parent,startingvalue,usealpha){
   var w=window
   this.binder=new MethodBinder(this)
-  this.isoriginal=(info==PDColorPicker.HueSatVal);
+  this.isoriginal=(info==rootobj.HueSatVal);
   if(ieversionorbelow(6))this.isoriginal=false;
   else if(!(navigator.userAgent.indexOf("MSIE ")>=0 ||
    navigator.userAgent.indexOf("like Mac OS X")>=0 ||
@@ -643,6 +648,9 @@ initialize:function(info,parent,startingvalue,usealpha){
    addListener(document,"mousedown",this.binder.bind(this.documentMouseDown))
    addListener(document,"mouseup",this.binder.bind(this.documentMouseUp))
    addListener(document,"mousemove",this.binder.bind(this.documentMouseMove))
+   addListener(document,"touchstart",this.binder.bind(this.documentMouseDown))
+   addListener(document,"touchend",this.binder.bind(this.documentMouseUp))
+   addListener(document,"touchmove",this.binder.bind(this.documentMouseMove))
 },
 documentKeyDown:function(e){
   e=eventDetails(e)
@@ -772,6 +780,9 @@ hide:function(){ // public
     removeListener(document,"mousedown",this.binder.bind(this.documentMouseDown))
     removeListener(document,"mouseup",this.binder.bind(this.documentMouseUp))
     removeListener(document,"mousemove",this.binder.bind(this.documentMouseMove))
+    removeListener(document,"touchstart",this.binder.bind(this.documentMouseDown))
+    removeListener(document,"touchend",this.binder.bind(this.documentMouseUp))
+    removeListener(document,"touchmove",this.binder.bind(this.documentMouseMove))
 },
 isInAreas3:function(o,x,y){
  var a=o.areacache[y*o.overalldims[0]+x]
@@ -970,7 +981,9 @@ documentMouseMove:function(e){
   var removeFilter=function(o,filter){
    if("filter" in o.style){
     var fs=(o.style.filter||"")
-    if(fs.length==0||fs=="none")return
+    if(fs=="none")return
+    fs=(getComputedValue(o,"filter")||"")
+    if(fs=="none"||fs=="")return
     var f=fs.split(/\)\s*,\s*/);
     var ff=[];
     var removed=false
@@ -982,24 +995,42 @@ documentMouseMove:function(e){
       } else removed=true
      }
     }
-    if(removed)o.style.filter=ff.join(",");
+    var newfs=ff.join(",")
+    if(newfs.length==0)newfs="none"
+    if(fs!=newfs)o.style.filter=newfs;
    }
+  }
+  var dobgcolordelayfunc=function(o,val){
+   return (function(){
+      if(o.getAttribute("data-currentbgcolor")==val){ 
+       try { o.style.background=val;
+       } catch(e){ o.style.background=rgbToColorHtml(colorToRgba(val)) }
+       o.setAttribute("data-currentbgcolor","")
+      } 
+     })
+  }
+  var nobgcolordelay=null;
+  var dobgcolordelay=function(o,val){
+   if(nobgcolordelay==null)
+    nobgcolordelay=(!ieversionorbelow(8))
+   if(nobgcolordelay){
+    o.style.background=val; return
+   }
+   o.setAttribute("data-currentbgcolor",val)
+   setTimeout(dobgcolordelayfunc(o,val),100)
   }
   var coloredInput=function(input,button){
    var c=(colorToRgba(input.value)||[0,0,0,255])
-   input.style.background=rgbToColorHtml(c)
+   dobgcolordelay(input,rgbToColorHtml(c))
    removeFilter(input,"gradient")//IE's filter takes precedence over background, so remove
    input.style.color=(isRgbDark(c)) ? "white" : "black"
    if(button){
     removeFilter(button,"gradient")//IE's filter takes precedence over background, so remove
-    try {
-     button.style.background=rgbToColor(c)
-    } catch(e){
-     button.style.background=rgbToColorHtml(c) // RGBA not supported
-    }
+    dobgcolordelay(button,rgbToColor(c))
     button.style.color=(isRgbDark(c)) ? "white" : "black"  
    }
   }
+  coloredInput.norgba=false
   function onNewInputClickFunction(newInput,thisInput,info,usealpha){
    return function(){
        var o=document.createElement("div")
@@ -1062,6 +1093,7 @@ documentMouseMove:function(e){
      } while(document.getElementById(bidstring))
      newInput.id=bidstring; 
      thisInput.parentNode.insertBefore(newInput,thisInput)
+     removeFilter(newInput,"gradient")// try again in case filter wasn't removed
      var chgfunc=function(newInput,thisInput,useAlpha){
       return function(){
           var c=((usealpha ? colorToRgba : colorToRgb)(thisInput.value))||[0,0,0,255]
@@ -1074,7 +1106,8 @@ documentMouseMove:function(e){
      // because of suggestions, use "input" instead of "keyup" if
      // supported by the browser (IE9 supports input only partially;
      // backspace doesn't trigger the input event)
-     addListener(thisInput,("oninput" in thisInput && !ieversionorbelow(9)) ? "input" : "keyup",changefunc)
+     addListener(thisInput,("oninput" in thisInput && !ieversionorbelow(9)) ? 
+      "input" : "keyup",changefunc)
      addListener(thisInput,"change",changefunc)   
      return newInput;     
   }
@@ -1096,10 +1129,10 @@ documentMouseMove:function(e){
    for(var i=0;i<inputs.length;i++){ inputsArray[inputsArray.length]=inputs[i] }
    for(var i=0;i<inputsArray.length;i++){
     var thisInput=inputsArray[i]
-    if((thisInput.type=="text" || thisInput.type=="color") && thisInput.id.indexOf("color_")==0){
+    if(thisInput.getAttribute("type")=="color" || 
+       (thisInput.type=="text" && thisInput.id.indexOf("color_")==0)){
      setColorPicker(thisInput,false)
-    }
-    if((thisInput.type=="text" || thisInput.type=="color") && thisInput.id.indexOf("acolor_")==0){
+    } else if(thisInput.getAttribute("type")=="text" && thisInput.id.indexOf("acolor_")==0){
      setColorPicker(thisInput,true)
     }
    }

@@ -35,7 +35,7 @@ function getComputedValue(elem,prop){ // expects syntax like 'background-color'
   if("style" in elem){
    // expects syntax like 'backgroundColor'
     if(prop=="float"){
-     prop=("cssFloat" in elem.currentStyle) ? "cssFloat" : "styleFloat";
+     prop=("cssFloat" in elem.style) ? "cssFloat" : "styleFloat";
     } else {
      prop=prop.replace(/-([a-z])/g,function(a,b){return b.toUpperCase();})
     }
@@ -156,7 +156,35 @@ function addListener(o,e,f){
   if("addEventListener" in o)
    o.addEventListener(e,f,false);
   else if(o.attachEvent)
-   o.attachEvent("on"+e,f);
+   o.attachEvent("on"+e,addListener.bind(o,f));
+}
+addListener.bind=function(o,f){
+ // This method ensures that "this" refers to the calling
+ // element or object within event listeners added
+ // via attachEvent 
+ if(!("uidevents" in addListener))addListener.uidevents={}
+ if(!("nonuidevents" in addListener))addListener.nonuidevents={}
+ var uid=o
+ var hash=addListener.nonuidevents
+ if("uniqueID" in o){
+  uid=o.uniqueID 
+  hash=addListener.uidevents
+ }
+ var x=hash[uid]
+ if(!x)x=hash[uid]={}
+ var xf=x[f]
+ if(!xf){
+   var thisfunc=f
+   var thisobj=o
+   xf=x[f]=function(){ 
+     var args=[];
+     for(var i=0;i<arguments.length;i++){
+      args[i]=arguments[i];
+     }
+     return thisfunc.apply(thisobj,args) 
+   }
+ }
+ return xf
 }
 
 function removeListener(o,e,f){
@@ -169,7 +197,7 @@ function removeListener(o,e,f){
     return
    }
    else if(o.detachEvent){
-    o.detachEvent("on"+e,f);
+    o.detachEvent("on"+e,addListener.bind(o,f));
     return
    }
   } catch(e){
@@ -385,22 +413,6 @@ window.addReadyListener=function(func){
  }
 }
 })(window);
-function triggerEvent(o,eventName){
-   if(document.createEvent){
-    var e=document.createEvent("HTMLEvents")
-    if(e){
-     e.initEvent(eventName,false,false);
-    } else {
-     e=document.createEvent("MouseEvents")
-     e.initMouseEvent(eventName,false,false,window,0,0,0,0,0,false,false,false,false,0,null);
-    }
-    o.dispatchEvent(e)
-   } else if(document.createEventObject){
-    var e=document.createEventObject();
-    e.eventType="on"+eventName
-    o.fireEvent(e.eventType,e)
-   }
-}
 
 ////////////////////////////////
 
@@ -549,6 +561,8 @@ colorToRgba.namedColorsPattern=function(){
    b[b.length]=o;if(o.indexOf("gray")>=0)b[b.length]=o.replace("gray","grey")
   }
  }
+ // for IE10 compatibility, sort by descending length
+ b.sort(function(x,y){ return (y.length-x.length) })
  var ret=""
  for(var i=0;i<b.length;i++){
   var buc=b[i].toUpperCase();
