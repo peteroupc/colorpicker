@@ -935,15 +935,17 @@ documentMouseMove:function(e){
   var colorChangeEvent=new EventHandlers();
   var colorPreviewEvent=new EventHandlers();
   var colorPickerAdapters=[];
-  rootobj.doColorChange=function(input,usealpha,button){
+  rootobj.doColorChange=function(input,extra,button){
+    var usealpha=extra.usealpha
     var c=((usealpha ? colorToRgba : colorToRgb)(input.value))||[0,0,0,255]
     coloredInput(input,button)
-    colorChangeEvent.trigger(c,thisInput)
+    colorChangeEvent.trigger(c,input)
   }
-  rootobj.doColorPreview=function(input,usealpha,button){
-    var c=((usealpha ? colorToRgba : colorToRgb)(thisInput.value))||[0,0,0,255]
+  rootobj.doColorPreview=function(input,extra,button){
+    var usealpha=extra.usealpha
+    var c=((usealpha ? colorToRgba : colorToRgb)(input.value))||[0,0,0,255]
     coloredInput(input,button)
-    colorPreviewEvent.trigger(c,thisInput)
+    colorPreviewEvent.trigger(c,input)
   }
   rootobj.getColorChangeEvent=function(){
     return new PublicEventHandlers(colorChangeEvent);
@@ -1031,17 +1033,25 @@ documentMouseMove:function(e){
    }
   }
   coloredInput.norgba=false
-  function onNewInputClickFunction(newInput,thisInput,info,usealpha){
+  function onNewInputClickFunction(newInput,thisInput,extra){
    return function(){
-       var o=document.createElement("div")
+       var ie7=ieversionorbelow(7)
+       var o=document.createElement((ie7 && extra.flat) ? "span" : "div")
        var cj=null
-       o.style.position="absolute"
-       document.body.appendChild(o)
-       var currentValue=((usealpha ? colorToRgba : colorToRgb)(thisInput.value))||[0,0,0,255]
+       if(!extra.flat){
+        o.style.position="absolute"
+        document.body.appendChild(o)
+       } else {
+        if(newInput)newInput.parentNode.insertBefore(o,newInput)
+        else thisInput.parentNode.insertBefore(o,thisInput)
+        if(newInput)newInput.style.display="none"
+        o.style.display="inline-block"
+       }
+       var currentValue=((extra.usealpha ? colorToRgba : colorToRgb)(thisInput.value))||[0,0,0,255]
        o.style.left=getPageX(newInput)+"px"
        o.style.top=(getPageY(newInput)+getHeight(newInput))+"px"
        o.style.margin="0px"
-       var cp=new mycolorpicker(info,o,currentValue,usealpha)
+       var cp=new mycolorpicker(extra.info,o,currentValue,extra.usealpha)
        cp.setChangeCallback(function(cc){
          thisInput.value=rgbToColorDisplay(cc);
          coloredInput(thisInput,newInput);
@@ -1077,12 +1087,15 @@ documentMouseMove:function(e){
          }
        }
        var docdown=function(){ checkclick=true }
-       addListener(document,"click",binder.bind(docclick))
-       addListener(document,"mousedown",binder.bind(docdown))
-       addListener(document,"keydown",binder.bind(keydown))
+       if(!extra.flat){
+        addListener(document,"click",binder.bind(docclick))
+        addListener(document,"mousedown",binder.bind(docdown))
+        addListener(document,"keydown",binder.bind(keydown))
+       }
    }
   }
-  rootobj.createColorPickerButton=function(thisInput,usealpha){
+  rootobj.createColorPickerButton=function(thisInput,extra){
+     var usealpha=extra.usealpha
      var newInput=document.createElement("input")
      newInput.type="button"
      newInput.value="..."
@@ -1111,16 +1124,26 @@ documentMouseMove:function(e){
      addListener(thisInput,"change",changefunc)   
      return newInput;     
   }
-  window.setColorPicker=function(thisInput,usealpha,info){
-     if(!info)info=(defaultModel || rootobj.HueSatVal);
-     try { thisInput.style.textShadow="none" }catch(e){}
-     setPatternAndTitle(thisInput,usealpha);
-     for(var i=0;i<colorPickerAdapters.length;i++){
-       if((colorPickerAdapters[i])(thisInput,usealpha,info)){return;}
+  rootobj.setColorPicker=function(thisInput,extra){
+     var newextra={
+      flat: ("flat" in extra) ? extra.flat : false,
+      usealpha: ("usealpha" in extra) ? extra.usealpha : false,
+      info: ("info" in extra && extra.info) ? extra.info : (defaultModel || rootobj.HueSatVal)
      }
-     useNativeColorPicker(thisInput,usealpha);
-     var newInput=rootobj.createColorPickerButton(thisInput,usealpha);
-     addListener(newInput,"click",onNewInputClickFunction(newInput,thisInput,info,usealpha))
+     extra=newextra
+     try { thisInput.style.textShadow="none" }catch(e){}
+     setPatternAndTitle(thisInput,extra.usealpha);
+     for(var i=0;i<colorPickerAdapters.length;i++){
+       if((colorPickerAdapters[i])(thisInput,extra)){return;}
+     }
+     useNativeColorPicker(thisInput,extra.usealpha);
+     if(extra.flat){
+      thisInput.style.display="none"
+      onNewInputClickFunction(newInput,thisInput,extra)();
+     } else {
+      var newInput=rootobj.createColorPickerButton(thisInput,extra.usealpha);
+      addListener(newInput,"click",onNewInputClickFunction(newInput,thisInput,extra))
+     }
   }
   addReadyListener(function(){ // set up color pickers
    var inputs=document.getElementsByTagName("input")
@@ -1131,9 +1154,9 @@ documentMouseMove:function(e){
     var thisInput=inputsArray[i]
     if(thisInput.getAttribute("type")=="color" || 
        (thisInput.type=="text" && thisInput.id.indexOf("color_")==0)){
-     setColorPicker(thisInput,false)
+     rootobj.setColorPicker(thisInput,{usealpha:false})
     } else if(thisInput.getAttribute("type")=="text" && thisInput.id.indexOf("acolor_")==0){
-     setColorPicker(thisInput,true)
+     rootobj.setColorPicker(thisInput,{usealpha:true})
     }
    }
   })

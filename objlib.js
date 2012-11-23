@@ -158,6 +158,8 @@ function addListener(o,e,f){
   else if(o.attachEvent)
    o.attachEvent("on"+e,addListener.bind(o,f));
 }
+addListener.bind=function(o,f){ return f }
+/* // doesn't work yet
 addListener.bind=function(o,f){
  // This method ensures that "this" refers to the calling
  // element or object within event listeners added
@@ -186,7 +188,7 @@ addListener.bind=function(o,f){
  }
  return xf
 }
-
+*/
 function removeListener(o,e,f){
   if(!o)return
   if(e=="mousewheel" && navigator.userAgent.indexOf("Gecko/")>=0)

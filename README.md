@@ -13,20 +13,26 @@ http://upokecenter.dreamhosters.com/d
 
 ## How to use:
 
-In general, include the scripts "cbox.js" and "objlib.js" to your HTML.  When the page is ready, it will convert certain textboxes into color pickers:
+In general, include the scripts "cbox.js" and "objlib.js" to your HTML:
 
-* Textboxes with IDs starting with "color_" will be converted into normal color pickers.
+    <script type="text/javascript" src="objlib.js"></script>
+    <script type="text/javascript" src="cbox.js"></script>
+
+When the page is ready, it will convert certain textboxes into color pickers:
+
+* Textboxes with IDs starting with "color_". and input elements with type "color", will be converted into normal color pickers.
 * Textboxes with IDs starting with "acolor_" will be converted into alpha color pickers.
 
 For more advanced features, use the following functions.
 
 ## Available Functions
 
-PDColorPicker.setColorPicker(_input_, _usealpha_, _info_) - sets up a color picker for the given textbox. The parameters are:
+PDColorPicker.setColorPicker( _input_, _extra_) - sets up a color picker for the given textbox. The 
+_input_ parameter is the HTML element for the input text box. The _extra_ parameter takes the following keys:
 
-1. input - the HTML element for the input text box.
-2. usealpha - whether this color picker should use the alpha channel or not
-3. info - the color model used.  If null, the default color model is used, which is initially `PDColorPicker.HueSatVal`.
+1. usealpha - whether this color picker should use the alpha channel or not.
+2. info - the color model used.  If null, the default color model is used, which is initially `PDColorPicker.HueSatVal`.
+3. flat - if true, shows the color selection control in-line rather than in the form of a text box and button. Default is false.
 
 PDColorPicker.getDefaultColorModel() - gets the default color model used by the color picker.
 The model is a JavaScript object with the following keys:
@@ -51,24 +57,24 @@ PDColorPicker.getColorPreviewEvent().add( _handler_ ) - adds a function to call 
 
 PDColorPicker.getColorPreviewEvent().remove( _handler_ ) - removes an event handler for a color preview event.
 
-PDColorPicker.addColorPickerAdapter( _handler_ ) - adds a function to call when setting up a color picker.  This is used mainly to support third-party JavaScript color pickers; the 
+PDColorPicker.addColorPickerAdapter( _handler_, _extra_ ) - adds a function to call when setting up a color picker.  This is used mainly to support third-party JavaScript color pickers; the 
 function should include code that links the text box with the third-party color picker.  If this function returns true, the code was linked to the third-party color picker 
-successfully.  The function takes three parameters:
+successfully.   The _input_ parameter is the HTML element for the input text box. The _extra_ parameter takes the following keys:
 
-1. input - the HTML element for the input text box.
-2. usealpha - whether this color picker should use the alpha channel or not
-3. info - the color model used.
+1. usealpha - whether this color picker should use the alpha channel or not.
+2. info - the color model used.
+3. flat - if true, shows the color selection control in-line rather than in the form of a text box and button.
 
 **The following methods are generally only useful when making color picker adapters:**
 
-PDColorPicker.createColorPickerButton( _input_, _usealpha_ ) - adds a color picker button next to the color text box.  This is a helper function used within functions called via `addColorPickerHandler()`. 
-_input_ and _usealpha_ have the same meaning as in ` addColorPickerAdapter()`.  Returns the HTML element for the button just added.
+PDColorPicker.createColorPickerButton( _input_, _extra_ ) - adds a color picker button next to the color text box.  This is a helper function used within functions called via `addColorPickerHandler()`. 
+_input_ and _extra_ have the same meaning as in ` addColorPickerAdapter()`.  Returns the HTML element for the button just added.
 
-PDColorPicker.doColorChange( _input_, _usealpha_ ) - triggers the color change event, using the current value of the color text box.
-_input_ and _usealpha_ have the same meaning as in ` addColorPickerAdapter()`.  `button` should be the button returned from `createColorPickerButton`.
+PDColorPicker.doColorChange( _input_, _extra_, _button_) - triggers the color change event, using the current value of the color text box.
+_input_ and _extra_ have the same meaning as in ` addColorPickerAdapter()`.  `button` should be the button returned from `createColorPickerButton`.
 
-PDColorPicker.doColorPreview( _input_, _usealpha_ ) - triggers the color preview event, using the current value of the color text box. 
-_input_ and _usealpha_ have the same meaning as in ` addColorPickerAdapter()`.  `button` should be the button returned from `createColorPickerButton`.
+PDColorPicker.doColorPreview( _input_, _extra_, _button_ ) - triggers the color preview event, using the current value of the color text box. 
+_input_ and _extra_ have the same meaning as in ` addColorPickerAdapter()`.  `button` should be the button returned from `createColorPickerButton`.
 
 ## Server-Side Processing
 
