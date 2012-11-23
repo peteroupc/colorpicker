@@ -241,7 +241,7 @@ namedColorsDatalist=function(){
     var v=colorToRgba.namedColors[o]
     if(typeof v=="string" && o.indexOf("grey")<0){
      var exists=false;
-     var c=PDColorPicker.HueLumSat.fromrgbcolor(colorToRgb(v))
+     var c=rootobj.HueLumSat.fromrgbcolor(colorToRgb(v))
      for(var i=0;i<colors.length;i++){
       var d=colors[i];if(d[0]==c[0]&&d[1]==c[1]&&
           d[2]==c[2]){ exists=true;break;}
@@ -252,7 +252,7 @@ namedColorsDatalist=function(){
    for(var r=0;r<=255;r+=85){
    for(var g=0;g<=255;g+=85){
    for(var b=0;b<=255;b+=85){
-     var c=PDColorPicker.HueLumSat.fromrgbcolor([r,g,b])
+     var c=rootobj.HueLumSat.fromrgbcolor([r,g,b])
      for(var i=0;i<colors.length;i++){
       var d=colors[i];if(d[0]==c[0]&&d[1]==c[1]&&
           d[2]==c[2]){ exists=true;break;}
@@ -270,7 +270,7 @@ namedColorsDatalist=function(){
    var datalist=document.createElement("datalist")
    for(var i=0;i<colors.length;i++){
     var o=document.createElement("option")
-    o.value=rgbToColorHtml(PDColorPicker.HueLumSat.torgbcolor(colors[i]))
+    o.value=rgbToColorHtml(rootobj.HueLumSat.torgbcolor(colors[i]))
     datalist.appendChild(o)
    }
    var datalistid=""; var dlid=0;
@@ -423,7 +423,7 @@ var mycolorpicker=subclass(Object,{
 initialize:function(info,parent,startingvalue,usealpha){
   var w=window
   this.binder=new MethodBinder(this)
-  this.isoriginal=(info==PDColorPicker.HueSatVal);
+  this.isoriginal=(info==rootobj.HueSatVal);
   if(ieversionorbelow(6))this.isoriginal=false;
   else if(!(navigator.userAgent.indexOf("MSIE ")>=0 ||
    navigator.userAgent.indexOf("like Mac OS X")>=0 ||
@@ -648,6 +648,9 @@ initialize:function(info,parent,startingvalue,usealpha){
    addListener(document,"mousedown",this.binder.bind(this.documentMouseDown))
    addListener(document,"mouseup",this.binder.bind(this.documentMouseUp))
    addListener(document,"mousemove",this.binder.bind(this.documentMouseMove))
+   addListener(document,"touchstart",this.binder.bind(this.documentMouseDown))
+   addListener(document,"touchend",this.binder.bind(this.documentMouseUp))
+   addListener(document,"touchmove",this.binder.bind(this.documentMouseMove))
 },
 documentKeyDown:function(e){
   e=eventDetails(e)
@@ -777,6 +780,9 @@ hide:function(){ // public
     removeListener(document,"mousedown",this.binder.bind(this.documentMouseDown))
     removeListener(document,"mouseup",this.binder.bind(this.documentMouseUp))
     removeListener(document,"mousemove",this.binder.bind(this.documentMouseMove))
+    removeListener(document,"touchstart",this.binder.bind(this.documentMouseDown))
+    removeListener(document,"touchend",this.binder.bind(this.documentMouseUp))
+    removeListener(document,"touchmove",this.binder.bind(this.documentMouseMove))
 },
 isInAreas3:function(o,x,y){
  var a=o.areacache[y*o.overalldims[0]+x]
@@ -1100,7 +1106,8 @@ documentMouseMove:function(e){
      // because of suggestions, use "input" instead of "keyup" if
      // supported by the browser (IE9 supports input only partially;
      // backspace doesn't trigger the input event)
-     addListener(thisInput,("oninput" in thisInput && !ieversionorbelow(9)) ? "input" : "keyup",changefunc)
+     addListener(thisInput,("oninput" in thisInput && !ieversionorbelow(9)) ? 
+      "input" : "keyup",changefunc)
      addListener(thisInput,"change",changefunc)   
      return newInput;     
   }
@@ -1122,10 +1129,10 @@ documentMouseMove:function(e){
    for(var i=0;i<inputs.length;i++){ inputsArray[inputsArray.length]=inputs[i] }
    for(var i=0;i<inputsArray.length;i++){
     var thisInput=inputsArray[i]
-    if((thisInput.type=="text" || thisInput.type=="color") && thisInput.id.indexOf("color_")==0){
+    if(thisInput.getAttribute("type")=="color" || 
+       (thisInput.type=="text" && thisInput.id.indexOf("color_")==0)){
      setColorPicker(thisInput,false)
-    }
-    if((thisInput.type=="text" || thisInput.type=="color") && thisInput.id.indexOf("acolor_")==0){
+    } else if(thisInput.getAttribute("type")=="text" && thisInput.id.indexOf("acolor_")==0){
      setColorPicker(thisInput,true)
     }
    }
