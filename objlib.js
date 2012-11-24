@@ -156,39 +156,9 @@ function addListener(o,e,f){
   if("addEventListener" in o)
    o.addEventListener(e,f,false);
   else if(o.attachEvent)
-   o.attachEvent("on"+e,addListener.bind(o,f));
+   o.attachEvent("on"+e,addListener.bind(o,"on"+e,f));
 }
-addListener.bind=function(o,f){ return f }
-/* // doesn't work yet
-addListener.bind=function(o,f){
- // This method ensures that "this" refers to the calling
- // element or object within event listeners added
- // via attachEvent 
- if(!("uidevents" in addListener))addListener.uidevents={}
- if(!("nonuidevents" in addListener))addListener.nonuidevents={}
- var uid=o
- var hash=addListener.nonuidevents
- if("uniqueID" in o){
-  uid=o.uniqueID 
-  hash=addListener.uidevents
- }
- var x=hash[uid]
- if(!x)x=hash[uid]={}
- var xf=x[f]
- if(!xf){
-   var thisfunc=f
-   var thisobj=o
-   xf=x[f]=function(){ 
-     var args=[];
-     for(var i=0;i<arguments.length;i++){
-      args[i]=arguments[i];
-     }
-     return thisfunc.apply(thisobj,args) 
-   }
- }
- return xf
-}
-*/
+addListener.bind=function(o,e,f){ return f }
 function removeListener(o,e,f){
   if(!o)return
   if(e=="mousewheel" && navigator.userAgent.indexOf("Gecko/")>=0)
@@ -199,7 +169,7 @@ function removeListener(o,e,f){
     return
    }
    else if(o.detachEvent){
-    o.detachEvent("on"+e,addListener.bind(o,f));
+    o.detachEvent("on"+e,addListener.bind(o,"on"+e,f));
     return
    }
   } catch(e){

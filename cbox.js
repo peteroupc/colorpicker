@@ -1047,6 +1047,7 @@ documentMouseMove:function(e){
         if(newInput)newInput.style.display="none"
         o.style.display="inline-block"
        }
+       var usealpha=extra.usealpha
        var currentValue=((extra.usealpha ? colorToRgba : colorToRgb)(thisInput.value))||[0,0,0,255]
        o.style.left=getPageX(newInput)+"px"
        o.style.top=(getPageY(newInput)+getHeight(newInput))+"px"
