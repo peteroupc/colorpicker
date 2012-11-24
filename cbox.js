@@ -514,15 +514,14 @@ initialize:function(info,parent,startingvalue,usealpha){
    this.colorbg=document.createElement("div")
    this.swatchbg=document.createElement("div")
    this.overlay=document.createElement("div")
+   this.swatchbg.style.position="absolute"
+   this.swatchbg.style.whiteSpace="nowrap"
+   areadims=this.colorspace.areadimensions(3)
+   this.swatchbg.style.width=(this.pixelWidth*areadims[2])+"px"
+   this.swatchbg.style.height=(this.pixelHeight*areadims[3])+"px"
+   if(this.usealpha)this.swatchbg.style.display="none"
+   this.swatchbg.style.backgroundColor=rgbToColorHtml(this.origvalue);
    if(this.isoriginal){
-    this.swatchbg.style.position="absolute"
-    this.swatchbg.style.cursor="crosshair"
-    this.swatchbg.style.whiteSpace="nowrap"
-    areadims=this.colorspace.areadimensions(3)
-    this.swatchbg.style.width=(this.pixelWidth*areadims[2])+"px"
-    this.swatchbg.style.height=(this.pixelHeight*areadims[3])+"px"
-    if(this.usealpha)this.swatchbg.style.display="none"
-    this.swatchbg.style.backgroundColor=rgbToColorHtml(this.origvalue);
     this.colorbg.style.position="absolute"
     this.colorbg.style.cursor="crosshair"
     this.colorbg.style.whiteSpace="nowrap"
@@ -825,21 +824,21 @@ updatedivs:function(area){
     else if(area!=null){justswatch=true; areafunc=this.isInAreas3}
     var maxwidth=this.overalldims[0];
     var maxheight=this.overalldims[1];
+    this.swatchbg.style.backgroundColor=rgbToColorHtml(this.colorspace.torgbcolor(this.current))
     if(this.isoriginal){
      var areadims=this.colorspace.areadimensions(1)
      var area1pure=[areadims[0]+areadims[2]-1,areadims[1]]
      var purecolor=this.colorspace.getcolor(area1pure[0],area1pure[1],this.current);
      this.colorbg.style.backgroundColor=rgbToColorHtml(purecolor)
-     this.swatchbg.style.backgroundColor=rgbToColorHtml(this.colorspace.torgbcolor(this.current))
      if(justswatch && !this.usealpha){
       return
      }
     }
     for(var y=0;y<maxheight;y++){
     for(var x=0;x<maxwidth;x++){
+     var ca=this.cachedarea(this,x,y);
+     if(!this.usealpha && ca==3){i++;continue;}
      if(this.isoriginal){
-      var ca=this.cachedarea(this,x,y);
-      if(!this.usealpha && ca==3){i++;continue;}
       if(ca==1){i++;continue;}
      }
      if(!areafunc || areafunc(this,x,y)){
