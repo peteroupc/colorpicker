@@ -6,16 +6,6 @@
 <script type="text/javascript" src="cbox.js"></script>
 </head>
 <body>
-<form action="index.html">
-<label for="color_c2"><a href="http://upokecenter.dreamhosters.com/articles/how-to-enter-colors/">Normal Color Picker</a>:</label> 
-<input type="text" value="blue" name="c1" id="color_c2"><br>
-<label for="acolor_c2"><a href="http://upokecenter.dreamhosters.com/articles/how-to-enter-colors/">Alpha Color Picker</a>:</label> 
-<input type="text" value="#ff0000" name="c2" id="acolor_c2"><br>
-<a href="http://upokecenter.dreamhosters.com/articles/how-to-enter-colors/">Native Color Picker</a>:
-<input type="color" value="#00ff00" name="c3"><br>
-<input type="submit" value="Fake Submit">
-</form>
-<hr/>
 <h1>Color Picker</h1>
 <p>Written by Peter O. in 2012. 
 <a href="http://upokecenter.dreamhosters.com/">http://upokecenter.dreamhosters.com/</a></p>
@@ -36,6 +26,31 @@ If you like this, consider donating to me to help pay my loans and other costs:
 <li><a href="https://github.com/peteroupc/colorpicker/tarball/master">Download source code as tar.gz</a></li>
 <li><a href="https://github.com/peteroupc/colorpicker">Browse source code</a></li>
 </ul>
+<h2>Demo</h2>
+<p>Include these scripts in your HTML header:</p>
+<pre>
+&lt;script type="text/javascript" src="objlib.js">&lt;/script>
+&lt;script type="text/javascript" src="cbox.js">&lt;/script>
+</pre>
+<p>Then, color input boxes, and textboxes with IDs starting with "color_" or "acolor_", will turn into color pickers.</p>
+<form action="index.html">
+<p><label for="color_c2"><a href="http://upokecenter.dreamhosters.com/articles/how-to-enter-colors/">Normal Color Picker</a>:</label> 
+<input type="text" value="blue" name="c1" id="color_c1"></p>
+<pre>
+&lt;input type="text" value="blue" name="c1" id="color_c1">
+</pre>
+<p><label for="acolor_c2"><a href="http://upokecenter.dreamhosters.com/articles/how-to-enter-colors/">Alpha Color Picker</a>:</label> 
+<input type="text" value="#ff0000" name="c2" id="acolor_c2"></pre>
+<pre>
+&lt;input type="text" value="#ff0000" name="c2" id="acolor_c2">
+</pre>
+<a href="http://upokecenter.dreamhosters.com/articles/how-to-enter-colors/">Native Color Picker</a>:
+<input type="color" value="#00ff00" name="c3"><br>
+<pre>
+&lt;input type="color" value="#00ff00" name="c3">
+</pre>
+<input type="submit" value="Fake Submit">
+</form>
 <h2>Share</h2>
 <p>Share this color picker with others.</p>
 <p>
