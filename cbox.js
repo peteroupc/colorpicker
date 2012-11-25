@@ -2,7 +2,87 @@
     Public domain dedication: http://creativecommons.org/publicdomain/zero/1.0/  */
 
 (function(window,rootobj){
- var ColorSpace=subclass(Object,{
+  var removeFilter=function(o,filter){
+   if("filter" in o.style){
+    var fs=(o.style.filter||"")
+    if(fs=="none")return
+    fs=(getComputedValue(o,"filter")||"")
+    if(fs=="none"||fs=="")return
+    var f=fs.split(/\)\s*,\s*/);
+    var ff=[];
+    var removed=false
+    filter=filter.toLowerCase();
+    for(var i=0;i<f.length;i++){
+     if((f[i]||"").length>0){
+      if(!(f[i].match(new RegExp("^progid\\:dximagetransform\\.microsoft\\."+filter+"\\s*\\(","i")))){
+       ff[ff.length]=f[i]+")";
+      } else removed=true
+     }
+    }
+    var newfs=ff.join(",")
+    if(newfs.length==0)newfs="none"
+    if(fs!=newfs)o.style.filter=newfs;
+   }
+  }
+ var applyCssGradient=function(o,colors){
+ if(!o || !colors || colors.length==0)return false // no colors
+ var colorstrings=[]
+ for(var i=0;i<colors.length;i++){
+  if(colors[i] && colors[i].constructor==Array)
+   colorstrings[colorstrings.length]=rgbToColor(colors[i])
+  else
+   colorstrings[colorstrings.length]=""+colors[i]  
+ }
+ if(colors.length==1){ // single color
+  o.style.backgroundColor=colorstrings[0]
+  return true  
+ }
+ var bi=o.style.backgroundImage
+ if(bi.indexOf("linear-gradient(")!=0)o.style.backgroundImage="none"
+ try { o.style.backgroundImage="linear-gradient("+colorstrings.join(",")+")"
+ bi=o.style.backgroundImage
+ if(bi!="none" && bi!="")return true } catch(ex){}
+ try { o.style.backgroundImage="-moz-linear-gradient("+colorstrings.join(",")+")"
+ bi=o.style.backgroundImage
+ if(bi!="none" && bi!="")return true } catch(ex){}
+ var gradientstring="linear, 0 0, 0 100%"
+ for(var i=0;i<colorstrings.length;i++){
+   if(i==0)gradientstring+=", from("
+   else if(i==colorstrings.length-1)gradientstring+=", to("
+   else gradientstring+=", color-stop("+(i*1.0/(colors.length-1))+", "
+   gradientstring+=colorstrings[i]+")"
+ }
+ try { o.style.background="-webkit-gradient("+gradientstring+")"
+ var bi=o.style.backgroundImage
+ if(bi!="none" && bi!="")return true } catch(ex){}
+ try { o.style.backgroundImage="-o-linear-gradient("+colorstrings.join(",")+")"
+ bi=o.style.backgroundImage
+ if(bi!="none" && bi!="")return true } catch(ex){}
+ try { o.style.backgroundImage="-ms-linear-gradient("+colorstrings.join(",")+")"
+ bi=o.style.backgroundImage
+ if(bi!="none" && bi!="")return true } catch(ex){}
+ if(colors.length==2 && "filters" in o){
+  var c=0;
+  var s=colorToRgba(colorstrings[0])||[0,0,0,0]
+  var e=colorToRgba(colorstrings[1])||[0,0,0,0]
+  var tohex=function(v){
+   var hx="0123456789ABCDEF"
+   var d=0; var c=((d=Math.round(v))<0 ? 0 : (d>255 ? 255 : d))
+   return hx.charAt((c>>4)&15)+hx.charAt(c&15)
+  }
+  var ss="#"+tohex(s[3])+tohex(s[0])+tohex(s[1])+tohex(s[2])
+  var es="#"+tohex(e[3])+tohex(e[0])+tohex(e[1])+tohex(e[2])
+  if((""+o.style.zoom)=="")o.style.zoom="1"
+  removeFilter(o,"gradient")
+  var filter=(o.style.filter||"")
+  if(filter!="" && filter!="none")filter+=","; else filter=""
+  filter+="progid:DXImageTransform.Microsoft.Gradient(GradientType=0,StartColorStr='"+ss+"',EndColorStr='"+es+"')"
+  o.style.filter=filter
+  return true
+ }
+ return false
+} 
+var ColorSpace=subclass(Object,{
   initialize:function(info,usealpha){
   this.usealpha=usealpha;
   this.info=info;
@@ -424,6 +504,7 @@ initialize:function(info,parent,startingvalue,usealpha){
   var w=window
   this.binder=new MethodBinder(this)
   this.isoriginal=(info==rootobj.HueSatVal);
+  this.ishueslider=(info==rootobj.HueSatVal || info==rootobj.HueLumSat);
   if(ieversionorbelow(6))this.isoriginal=false;
   else if(!(navigator.userAgent.indexOf("MSIE ")>=0 ||
    navigator.userAgent.indexOf("like Mac OS X")>=0 ||
@@ -511,6 +592,7 @@ initialize:function(info,parent,startingvalue,usealpha){
    this.hexvalue.style.position="absolute"
    this.hexvalue.style.color="black"
    this.hexvalue.style.whiteSpace="nowrap"
+   this.hueslider=document.createElement("div")
    this.colorbg=document.createElement("div")
    this.swatchbg=document.createElement("div")
    this.overlay=document.createElement("div")
@@ -521,6 +603,15 @@ initialize:function(info,parent,startingvalue,usealpha){
    this.swatchbg.style.height=(this.pixelHeight*areadims[3])+"px"
    if(this.usealpha)this.swatchbg.style.display="none"
    this.swatchbg.style.backgroundColor=rgbToColorHtml(this.origvalue);
+   if(this.ishueslider){
+    this.hueslider.style.position="absolute"
+    this.hueslider.style.cursor="crosshair"
+    this.hueslider.style.whiteSpace="nowrap"
+    areadims=this.colorspace.areadimensions(2)
+    this.hueslider.style.width=(this.pixelWidth*areadims[2])+"px"
+    this.hueslider.style.height=(this.pixelHeight*areadims[3])+"px"
+    if(!this.updateHueSlider(this.hueslider,this.current))this.ishueslider=false
+   }
    if(this.isoriginal){
     this.colorbg.style.position="absolute"
     this.colorbg.style.cursor="crosshair"
@@ -615,6 +706,7 @@ initialize:function(info,parent,startingvalue,usealpha){
    this.resetdiv.appendChild(this.resetlink)
    this.p.appendChild(this.swatchbg)
    this.p.appendChild(this.colorbg)
+   this.p.appendChild(this.hueslider)
    this.p.appendChild(this.overlay)
    this.p.appendChild(this.resetdiv)
    this.p.appendChild(this.hexvalue)
@@ -697,6 +789,19 @@ documentKeyDown:function(e){
   }
   return true;
 },
+updateHueSlider:function(o,current){
+ var areadims=this.colorspace.areadimensions(2);
+ var huecolors=[
+     rgbToColorHtml(this.colorspace.getcolor(areadims[0],areadims[1],current)),
+     rgbToColorHtml(this.colorspace.getcolor(areadims[0],areadims[1]+Math.floor((areadims[3]-1)*1/6),current)),
+     rgbToColorHtml(this.colorspace.getcolor(areadims[0],areadims[1]+Math.floor((areadims[3]-1)*2/6),current)),
+     rgbToColorHtml(this.colorspace.getcolor(areadims[0],areadims[1]+Math.floor((areadims[3]-1)*3/6),current)),
+     rgbToColorHtml(this.colorspace.getcolor(areadims[0],areadims[1]+Math.floor((areadims[3]-1)*4/6),current)),
+     rgbToColorHtml(this.colorspace.getcolor(areadims[0],areadims[1]+Math.floor((areadims[3]-1)*5/6),current)),
+     rgbToColorHtml(this.colorspace.getcolor(areadims[0],areadims[1]+areadims[3]-1,current)),
+    ]
+    return applyCssGradient(this.hueslider,huecolors);
+},
 adjustLeft:function(p,startPos){
    if("clientWidth" in document.body){
       var cw=document.body.clientWidth
@@ -746,6 +851,8 @@ readjustpos:function(current){
     var suggx;
     var sx=this.startx+this.padding;
     var sy=this.starty+this.padding;
+    setPageX(this.hueslider,sx+(dimsside[0]*this.pixelWidth))
+    setPageY(this.hueslider,sy+(dimsside[1]*this.pixelHeight))
     setPageX(this.swatchbg,sx+(dimsswatch[0]*this.pixelWidth))
     setPageY(this.swatchbg,sy+(dimsswatch[1]*this.pixelHeight))
     setPageX(this.colorbg,sx+(dimsmatrix[0]*this.pixelWidth))
@@ -825,6 +932,10 @@ updatedivs:function(area){
     var maxwidth=this.overalldims[0];
     var maxheight=this.overalldims[1];
     this.swatchbg.style.backgroundColor=rgbToColorHtml(this.colorspace.torgbcolor(this.current))
+    if(this.ishueslider && area!=2){
+       this.updateHueSlider(this.hueslider,this.current)    
+       if(this.isoriginal && !this.usealpha)justswatch=true;
+    }
     if(this.isoriginal){
      var areadims=this.colorspace.areadimensions(1)
      var area1pure=[areadims[0]+areadims[2]-1,areadims[1]]
@@ -838,9 +949,8 @@ updatedivs:function(area){
     for(var x=0;x<maxwidth;x++){
      var ca=this.cachedarea(this,x,y);
      if(!this.usealpha && ca==3){i++;continue;}
-     if(this.isoriginal){
-      if(ca==1){i++;continue;}
-     }
+     if(this.isoriginal){if(ca==1){i++;continue;}}
+     if(this.ishueslider){if(ca==2){i++;continue;}}
      if(!areafunc || areafunc(this,x,y)){
       var bgc=this.bgcolors[i]||""
       var cp=this.colorspace.getcolor(x,y,this.current)
@@ -978,28 +1088,6 @@ documentMouseMove:function(e){
     _supportsColorInput=(val.indexOf("#")==0)
     document.body.removeChild(f)
     return _supportsColorInput;
-  }
-  var removeFilter=function(o,filter){
-   if("filter" in o.style){
-    var fs=(o.style.filter||"")
-    if(fs=="none")return
-    fs=(getComputedValue(o,"filter")||"")
-    if(fs=="none"||fs=="")return
-    var f=fs.split(/\)\s*,\s*/);
-    var ff=[];
-    var removed=false
-    filter=filter.toLowerCase();
-    for(var i=0;i<f.length;i++){
-     if((f[i]||"").length>0){
-      if(!(f[i].match(new RegExp("^progid\\:dximagetransform\\.microsoft\\."+filter+"\\s*\\(","i")))){
-       ff[ff.length]=f[i]+")";
-      } else removed=true
-     }
-    }
-    var newfs=ff.join(",")
-    if(newfs.length==0)newfs="none"
-    if(fs!=newfs)o.style.filter=newfs;
-   }
   }
   var dobgcolordelayfunc=function(o,val){
    return (function(){

@@ -18,7 +18,7 @@ A color picker in JavaScript.  Supports adapters for integrating other popular c
 If you like this, consider donating to me to help pay my loans and other costs:
 </p>
 <p>
-<a href="http://upokecenter.dreamhosters.com/d">http://upokecenter.dreamhosters.com/d</a>
+<a href="http://www.gofundme.com/1kcsek">http://www.gofundme.com/1kcsek</a>
 </p>
 <h2>Download</h2>
 <ul>
@@ -40,12 +40,12 @@ If you like this, consider donating to me to help pay my loans and other costs:
 &lt;input type="text" value="blue" name="c1" id="color_c1">
 </pre>
 <p><label for="acolor_c2"><a href="http://upokecenter.dreamhosters.com/articles/how-to-enter-colors/">Alpha Color Picker</a>:</label> 
-<input type="text" value="#ff0000" name="c2" id="acolor_c2"></pre>
+<input type="text" value="#ff0000" name="c2" id="acolor_c2">
 <pre>
 &lt;input type="text" value="#ff0000" name="c2" id="acolor_c2">
 </pre>
 <a href="http://upokecenter.dreamhosters.com/articles/how-to-enter-colors/">Native Color Picker</a>:
-<input type="color" value="#00ff00" name="c3"><br>
+<input type="color" value="#00ff00" name="c3">
 <pre>
 &lt;input type="color" value="#00ff00" name="c3">
 </pre>
@@ -60,6 +60,9 @@ If you like this, consider donating to me to help pay my loans and other costs:
 <span><fb:like href="http://peteroupc.github.com/colorpicker/" send="true" width="450" show_faces="true"></fb:like></span>
 </p>
 <script>
+
+if(document.location.href.indexOf("file://")!=0){
+
   (function() {
     var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
     po.src = '//apis.google.com/js/plusone.js';
@@ -73,5 +76,7 @@ If you like this, consider donating to me to help pay my loans and other costs:
   js.src = "//connect.facebook.net/en_US/all.js#xfbml=1";
   fjs.parentNode.insertBefore(js, fjs);
 }(document, 'script', 'facebook-jssdk'));
+
+}
 </script>
 </body></html>
