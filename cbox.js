@@ -24,6 +24,48 @@
     if(fs!=newfs)o.style.filter=newfs;
    }
   }
+ var fakeMultiGradient=function(o,colors){
+  if(colors.length==2)return applyCssGradient(o,colors)
+  var nodes=o.getElementsByTagName("div")
+  if(nodes.length==colors.length-1){
+   for(var i=0;i<nodes.length;i++){
+    if(!applyCssGradient(nodes[i],[colors[i],colors[i+1]]))return false  
+   }
+   return true
+  } else {
+   var w=getWidth(o)
+   var h=getHeight(o)
+   var px=getPageX(o)
+   var py=getPageY(o)
+   if(nodes.length<colors.length-1){
+    var nodearray=[]
+    for(var i=0;i<colors.length-1;i++){
+     if(i<nodes.length)nodearray[i]=nodes[i]
+     else {
+      nodearray[i]=document.createElement("div")
+      nodearray[i].style.position="absolute"
+      o.appendChild(nodearray[i])
+     }
+    }
+    nodes=nodearray
+   }
+   for(var i=0;i<nodes.length;i++){
+    var y=Math.floor((i)*h*1.0/(colors.length-1));
+    var hnext=Math.floor((i+1)*h*1.0/(colors.length-1));
+    var ht=hnext-y
+    var n=nodes[i]
+    if(ht<=0)o.removeChild(n)
+    else {
+     setPageX(n,px)
+     setPageY(n,py+y)
+     setWidth(n,w)
+     setHeight(n,ht)
+     if(!applyCssGradient(n,[colors[i],colors[i+1]]))return false
+    }
+   }
+   return true
+  }
+ }
  var applyCssGradient=function(o,colors){
  if(!o || !colors || colors.length==0)return false // no colors
  var colorstrings=[]
@@ -79,6 +121,8 @@
   filter+="progid:DXImageTransform.Microsoft.Gradient(GradientType=0,StartColorStr='"+ss+"',EndColorStr='"+es+"')"
   o.style.filter=filter
   return true
+ } else if("filters" in o){
+  return fakeMultiGradient(o,colors) 
  }
  return false
 } 
@@ -609,7 +653,7 @@ initialize:function(info,parent,startingvalue,usealpha){
     this.hueslider.style.whiteSpace="nowrap"
     areadims=this.colorspace.areadimensions(2)
     this.hueslider.style.width=(this.pixelWidth*areadims[2])+"px"
-    this.hueslider.style.height=(this.pixelHeight*areadims[3])+"px"
+    this.hueslider.style.height=(this.pixelHeight*areadims[3])+"px"    
     if(!this.updateHueSlider(this.hueslider,this.current))this.ishueslider=false
    }
    if(this.isoriginal){
@@ -798,7 +842,7 @@ updateHueSlider:function(o,current){
      rgbToColorHtml(this.colorspace.getcolor(areadims[0],areadims[1]+Math.floor((areadims[3]-1)*3/6),current)),
      rgbToColorHtml(this.colorspace.getcolor(areadims[0],areadims[1]+Math.floor((areadims[3]-1)*4/6),current)),
      rgbToColorHtml(this.colorspace.getcolor(areadims[0],areadims[1]+Math.floor((areadims[3]-1)*5/6),current)),
-     rgbToColorHtml(this.colorspace.getcolor(areadims[0],areadims[1]+areadims[3]-1,current)),
+     rgbToColorHtml(this.colorspace.getcolor(areadims[0],areadims[1]+areadims[3]-1,current))
     ]
     return applyCssGradient(this.hueslider,huecolors);
 },
@@ -948,7 +992,7 @@ updatedivs:function(area){
     for(var y=0;y<maxheight;y++){
     for(var x=0;x<maxwidth;x++){
      var ca=this.cachedarea(this,x,y);
-     if(!this.usealpha && ca==3){i++;continue;}
+     if((!this.usealpha) && ca==3){i++;continue;}
      if(this.isoriginal){if(ca==1){i++;continue;}}
      if(this.ishueslider){if(ca==2){i++;continue;}}
      if(!areafunc || areafunc(this,x,y)){
@@ -1103,7 +1147,8 @@ documentMouseMove:function(e){
    if(nobgcolordelay==null)
     nobgcolordelay=(!ieversionorbelow(8))
    if(nobgcolordelay){
-    o.style.background=val; return
+    try { o.style.background=val; }
+    catch(e){ o.style.background=rgbToColorHtml(colorToRgba(val)) }; return
    }
    o.setAttribute("data-currentbgcolor",val)
    setTimeout(dobgcolordelayfunc(o,val),100)

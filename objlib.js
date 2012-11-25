@@ -261,7 +261,7 @@ function MethodBinder(obj){
 (function(window){
 
 var __isMouse=function(eventType){
-     return (/(click|mouse|menu)/.test(eventType) || eventType=="DOMMouseScroll");
+     return (/(click|mouse|menu|touch)/.test(eventType) || eventType=="DOMMouseScroll");
 }
 var eventDetailsFunc={
    rightClick:function(){
@@ -271,17 +271,17 @@ var eventDetailsFunc={
     return this.event.relatedTarget || ((this.type=="mouseover") ? this.event.fromElement : this.event.toElement)
    },
    wheel:function(){
-      return (eventType=="mousewheel" || eventType=="DOMMouseScroll") ? 
+      return (this.type=="mousewheel" || this.type=="DOMMouseScroll") ? 
          ((this.event.wheelDelta) ? this.event.wheelDelta/120 : -(this.event.detail||0)/3) : 0
    },
    // Mouse coordinates relative to page's top left corner
    pageX:function(){
       return (!__isMouse(this.type)) ? 0 : (this.event.pageX || ((this.event.clientX||0)+
-         ((document.documentElement || document.body).scrollLeft||0)))
+         Math.max((document.documentElement ? document.documentElement.scrollLeft : 0),document.body.scrollLeft)))
    },
    pageY:function(){
       return (!__isMouse(this.type)) ? 0 : (this.event.pageY || ((this.event.clientY||0)+
-         ((document.documentElement || document.body).scrollTop||0)))
+         Math.max((document.documentElement ? document.documentElement.scrollTop : 0),document.body.scrollTop)))
    },
    // Mouse coordinates relative to client area's top left corner
    clientX:function(){
