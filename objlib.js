@@ -465,9 +465,12 @@ function colorHtmlToRgba(x){
  ]
 }
 
+/* This file is in the public domain. Peter O., 2012. http://upokecenter.dreamhosters.com 
+    Public domain dedication: http://creativecommons.org/publicdomain/zero/1.0/  */
 // Converts a representation of a color to its RGB form
 // Returns a 4-item array containing the intensity of red,
 // green, blue, and alpha (each from 0-255)
+// Returns null if the color can't be converted
 function colorToRgba(x){
  var e=null
  if(!x)return null
@@ -523,27 +526,6 @@ function colorToRgba(x){
   if(x=="transparent")return [0,0,0,0]
   return null
  }
-}
-
-colorToRgba.namedColorsPattern=function(){
- colorToRgba.setUpNamedColors();var b=[]
- for(var o in colorToRgba.namedColors){
-  var v=colorToRgba.namedColors[o]
-  if(typeof v=="string"){
-   b[b.length]=o;if(o.indexOf("gray")>=0)b[b.length]=o.replace("gray","grey")
-  }
- }
- // for IE10 compatibility, sort by descending length
- b.sort(function(x,y){ return (y.length-x.length) })
- var ret=""
- for(var i=0;i<b.length;i++){
-  var buc=b[i].toUpperCase();
-  if(ret.length>0)ret+="|"
-  for(var j=0;j<b[i].length;j++){
-   ret+="["+buc.charAt(j)+b[i].charAt(j)+"]"
-  }
- }
- return ret
 }
 
 colorToRgba.setUpNamedColors=function(){
@@ -623,3 +605,27 @@ function rgbToColorHtml(r,g,b){
 function isRgbDark(rgb){
  return((rgb[0]*299)+(rgb[1]*587)+(rgb[2]*114))/1000<=127.5
 }
+
+
+
+colorToRgba.namedColorsPattern=function(){
+ colorToRgba.setUpNamedColors();var b=[]
+ for(var o in colorToRgba.namedColors){
+  var v=colorToRgba.namedColors[o]
+  if(typeof v=="string"){
+   b[b.length]=o;if(o.indexOf("gray")>=0)b[b.length]=o.replace("gray","grey")
+  }
+ }
+ // for IE10 compatibility, sort by descending length
+ b.sort(function(x,y){ return (y.length-x.length) })
+ var ret=""
+ for(var i=0;i<b.length;i++){
+  var buc=b[i].toUpperCase();
+  if(ret.length>0)ret+="|"
+  for(var j=0;j<b[i].length;j++){
+   ret+="["+buc.charAt(j)+b[i].charAt(j)+"]"
+  }
+ }
+ return ret
+}
+

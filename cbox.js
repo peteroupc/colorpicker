@@ -8,18 +8,22 @@
     if(fs=="none")return
     fs=(getComputedValue(o,"filter")||"")
     if(fs=="none"||fs=="")return
-    var f=fs.split(/\)\s*,\s*/);
-    var ff=[];
-    var removed=false
+    var ftmp=fs
+    var ff=[]
     filter=filter.toLowerCase();
-    for(var i=0;i<f.length;i++){
-     if((f[i]||"").length>0){
-      if(!(f[i].match(new RegExp("^progid\\:dximagetransform\\.microsoft\\."+filter+"\\s*\\(","i")))){
-       ff[ff.length]=f[i]+")";
-      } else removed=true
-     }
+    while(ftmp.length>0){
+     var e=(/^(\s*([^\(\s\,]+)\s*(\([^\)]+\))?\s*)/).exec(ftmp)
+     if(e){
+      var filtername=e[2]
+      var filterparams=(e[3]||"")
+      var lcfiltername=e[2].toLowerCase()
+      if(lcfiltername!=filter && lcfiltername!="progid:dximagetransform.microsoft."+filter){
+       ff[ff.length]=filtername+filterparams
+      }
+      ftmp=ftmp.substr(e[1].length)
+     } else break
     }
-    var newfs=ff.join(",")
+    var newfs=ff.join(" ")
     if(newfs.length==0)newfs="none"
     if(fs!=newfs)o.style.filter=newfs;
    }
@@ -33,10 +37,6 @@
    }
    return true
   } else {
-   var w=getWidth(o)
-   var h=getHeight(o)
-   var px=getPageX(o)
-   var py=getPageY(o)
    if(nodes.length<colors.length-1){
     var nodearray=[]
     for(var i=0;i<colors.length-1;i++){
@@ -49,6 +49,11 @@
     }
     nodes=nodearray
    }
+   
+   var w=getWidth(o)
+   var h=getHeight(o)
+   var px=getPageX(o)
+   var py=getPageY(o)
    for(var i=0;i<nodes.length;i++){
     var y=Math.floor((i)*h*1.0/(colors.length-1));
     var hnext=Math.floor((i+1)*h*1.0/(colors.length-1));
