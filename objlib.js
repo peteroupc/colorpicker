@@ -628,4 +628,3 @@ colorToRgba.namedColorsPattern=function(){
  }
  return ret
 }
-

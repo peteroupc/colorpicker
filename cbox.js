@@ -1309,16 +1309,16 @@ rootobj.HueLumSat={
   var vmin=r;
   if (g<vmin) vmin=g;
   if (b<vmin) vmin=b;
-  var lt=((vmax+vmin)/2.0);
+  var vadd=(vmax+vmin);
+  var lt=vadd/2.0;
   if (vmax==vmin){
    return [0,(lt<0 ? 0 : (lt>255 ? 255 : lt)),0]
   }
-  var h=0;
   var vd=(vmax-vmin);
-  var vadd=(vmax+vmin);
-   var hvd=vd/2;
    var divisor=(lt<=127.5)?vadd:510-vadd;
    var s=((vd*255)/divisor);
+  var h=0;
+   var hvd=vd/2;
    if (r == vmax){
     h=(((vmax-b)*60)+hvd)/vd;
     h-=(((vmax-g)*60)+hvd)/vd;
