@@ -1,7 +1,7 @@
 Color Picker
 ===========
 
-Written by Peter O. in 2012. http://upokecenter.dreamhosters.com/
+Written by Peter O. in 2012/2013. http://upokecenter.dreamhosters.com/
 
 A color picker in JavaScript. Supports adapters for integrating other popular color pickers, and can use native color selection controls. In the public domain under CC0.
 
