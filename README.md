@@ -35,6 +35,7 @@ _input_ parameter is the HTML element for the input text box. The _extra_ parame
 2. info - the color model used. If null, the default color model is used, which is initially `PDColorPicker.HueSatVal`.
 3. flat - if true, shows the color selection control in-line rather than in the form of a text box and button. Default is false.
 
+4. rgbahex - if true, the color format used is RRGGBBAA, with hexadecimal components.
 PDColorPicker.getDefaultColorModel() - gets the default color model used by the color picker.
 The model is a JavaScript object with the following keys:
 

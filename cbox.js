@@ -1130,7 +1130,6 @@ documentMouseMove:function(e){
     }
   }
   rootobj.doColorPreview=function(input,extra,button){
-    var usealpha=extra.usealpha
     var c=rootobj.getRgba(input)
     coloredInput(input,button)
     colorPreviewEvent.trigger(c,input)
