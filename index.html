@@ -11,7 +11,8 @@
 <a href="http://upokecenter.dreamhosters.com/">http://upokecenter.dreamhosters.com/</a></p>
 
 <p>
-A color picker in JavaScript.  Supports adapters for integrating other popular color pickers, and can use native color selection controls.  In the public domain under CC0.
+A color picker in JavaScript.  Supports adapters for integrating other popular color pickers, and can use native color selection controls. 
+In the public domain under CC0.
 </p>
 <h2>Donate to me</h2>
 <p>
@@ -32,12 +33,15 @@ If you like this, consider donating to me to help pay my loans and other costs:
 &lt;script type="text/javascript" src="objlib.js">&lt;/script>
 &lt;script type="text/javascript" src="cbox.js">&lt;/script>
 </pre>
-<p>Then, color input boxes, and textboxes with IDs starting with "color_" or "acolor_" or "rgbahex_", will turn into color pickers.</p>
+<p>Then, color input boxes, and textboxes with IDs or class names starting with "color_" or "acolor_" or 
+"rgbahex_" or "argbhex_" will turn into color pickers.</p>
 <form action="index.html">
 <p><label for="color_c2"><a href="http://upokecenter.dreamhosters.com/articles/how-to-enter-colors/">Normal Color Picker</a>:</label> 
 <input type="text" value="blue" name="c1" id="color_c1"></p>
 <pre>
 &lt;input type="text" value="blue" name="c1" id="color_c1">
+OR
+&lt;input type="text" value="blue" name="c1" class="color_c1">
 </pre>
 <p><label for="acolor_c2"><a href="http://upokecenter.dreamhosters.com/articles/how-to-enter-colors/">Alpha Color Picker</a>:</label> 
 <input type="text" value="#ff0000" name="c2" id="acolor_c2">
@@ -73,15 +77,16 @@ Alpha Color Picker (AARRGGBB format)</a>:</label><br/>
 </p>
 <hr>
 <p>
-Color Picker<br>===========<br><br>Written by Peter O. in 2012. http://upokecenter.dreamhosters.com/<br><br>A color picker in JavaScript.  Supports adapters for integrating other popular color pickers, and can use native color selection controls.  In the public domain.<br><br>## Donate to me<br><br>If you like this, consider donating to me to help pay my loans and other costs:<br><br>http://upokecenter.dreamhosters.com/d<br><br>## How to use:<br><br>In general, include the scripts "cbox.js" and "objlib.js" to your HTML:<br><br>    &lt;script type="text/javascript" src="objlib.js">&lt;/script><br>    &lt;script type="text/javascript" src="cbox.js">&lt;/script><br><br>When the page is ready, it will convert certain textboxes into color pickers:<br><br>
-* Textboxes with IDs starting with "color_". and input elements with type "color", will be converted into normal color pickers.
-
-<br>* Textboxes with IDs starting with "rgbahex_" will be converted into alpha color pickers that use
+Color Picker<br>===========<br><br>Written by Peter O. in 2012. http://upokecenter.dreamhosters.com/<br><br>
+A color picker in JavaScript.  Supports adapters for integrating other popular color pickers, and can use native color selection controls. 
+In the public domain under CC0.<br><br>## Donate to me<br><br>If you like this, consider donating to me to help pay my loans and other costs:<br><br>http://upokecenter.dreamhosters.com/d<br><br>## How to use:<br><br>In general, include the scripts "cbox.js" and "objlib.js" to your HTML:<br><br>    &lt;script type="text/javascript" src="objlib.js">&lt;/script><br>    &lt;script type="text/javascript" src="cbox.js">&lt;/script><br><br>When the page is ready, it will convert certain textboxes into color pickers:<br><br>
+* Textboxes with IDs or class names starting with "color_". and input elements with type "color", will be converted into normal color pickers.
+<br>* Textboxes with IDs or class names starting with "rgbahex_" will be converted into alpha color pickers that use
 the color format RRGGBBAA, with no "#" character, and with hexadecimal components.
-<br>* Textboxes with IDs starting with "argbhex_" will be converted into alpha color pickers that use
+<br>* Textboxes with IDs or class names starting with "argbhex_" will be converted into alpha color pickers that use
 the color format AARRGGBB, with no "#" character, and with hexadecimal components.
 
-<br>* Textboxes with IDs starting with "acolor_" will be converted into alpha color pickers.<br><br>For more advanced features, use the following functions.<br><br>## Available Functions<br><br>PDColorPicker.setColorPicker( _input_, _extra_) - sets up a color picker for the given textbox. The <br>_input_ parameter is the HTML element for the input text box. The _extra_ parameter takes the following keys:<br><br>1. usealpha - whether this color picker should use the alpha channel or not.
+<br>* Textboxes with IDs or class names starting with "acolor_" will be converted into alpha color pickers.<br><br>For more advanced features, use the following functions.<br><br>## Available Functions<br><br>PDColorPicker.setColorPicker( _input_, _extra_) - sets up a color picker for the given textbox. The <br>_input_ parameter is the HTML element for the input text box. The _extra_ parameter takes the following keys:<br><br>1. usealpha - whether this color picker should use the alpha channel or not.
 <br>2. info - the color model used.  If null, the default color model is used, which is initially `PDColorPicker.HueSatVal`.
 <br>3. flat - if true, shows the color selection control in-line rather than in the form of a text box and button. Default is false.<br>
 <br>4. rgbahex - if true, the color format used is RRGGBBAA, with hexadecimal components.

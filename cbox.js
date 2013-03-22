@@ -1312,6 +1312,17 @@ documentMouseMove:function(e){
       addListener(newInput,"click",onNewInputClickFunction(newInput,thisInput,extra))
      }
   }
+  rootobj.hasIdOrClassName=function(o,tag){
+   if(o.id.indexOf(tag)==0)return true;
+   if(o.className){ 
+    // there may be multiple class names so split them
+    var cns=o.className.replace(/^\s+|\s+$/g,"").split(/\s+/)
+    for(var i=0;i<cns.length;i++){
+     if(cns[i].indexOf(tag)==0)return true;
+    }
+   }
+   return false;
+  }
   addReadyListener(function(){ // set up color pickers
    var inputs=document.getElementsByTagName("input")
    var inputsArray=[];
@@ -1320,13 +1331,13 @@ documentMouseMove:function(e){
    for(var i=0;i<inputsArray.length;i++){
     var thisInput=inputsArray[i]
     if(thisInput.getAttribute("type")=="color" || 
-       (thisInput.type=="text" && thisInput.id.indexOf("color_")==0)){
+       (thisInput.type=="text" && rootobj.hasIdOrClassName(thisInput,"color_"))){
      rootobj.setColorPicker(thisInput,{usealpha:false})
-    } else if(thisInput.getAttribute("type")=="text" && thisInput.id.indexOf("rgbahex_")==0){
+    } else if(thisInput.getAttribute("type")=="text" && rootobj.hasIdOrClassName(thisInput,"rgbahex_")){
      rootobj.setColorPicker(thisInput,{usealpha:true,rgbahex:true})
-    } else if(thisInput.getAttribute("type")=="text" && thisInput.id.indexOf("argbhex_")==0){
+    } else if(thisInput.getAttribute("type")=="text" && rootobj.hasIdOrClassName(thisInput,"argbhex_")){
      rootobj.setColorPicker(thisInput,{usealpha:true,argbhex:true})
-    } else if(thisInput.getAttribute("type")=="text" && thisInput.id.indexOf("acolor_")==0){
+    } else if(thisInput.getAttribute("type")=="text" && rootobj.hasIdOrClassName(thisInput,"acolor_")){
      rootobj.setColorPicker(thisInput,{usealpha:true})
     }
    }
