@@ -589,6 +589,21 @@ function colorRgbaToRgba(value){
  return colorToRgba(value)
 }
 
+function colorArgbToRgba(value){
+ if(e=(/^([A-Fa-f0-9]{2})([A-Fa-f0-9]{2})([A-Fa-f0-9]{2})([A-Fa-f0-9]{2})$/.exec(value))){
+  return [parseInt(e[2],16),parseInt(e[3],16),parseInt(e[4],16),parseInt(e[1],16)]
+ }
+ return colorToRgba(value)
+}
+
+function rgbToColorArgb(r,g,b,a){
+ if(r!=null && g==null && b==null){
+  return rgbToColorRgba(r[3],r[0],r[1],r[2])
+ } else {
+  return rgbToColorRgba(a,r,g,b);
+ }
+}
+
 function rgbToColorRgba(r,g,b,a){
  if(!rgbToColorHtml.table){
   rgbToColorHtml.table=[]

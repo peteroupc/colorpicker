@@ -413,7 +413,7 @@ namedColorsDatalist=function(){
   }
 
 var useNativeColorPicker=function(thisInput,usealpha){
-   if(thisInput.getAttribute("rgbahex")=="1")return;
+   if(thisInput.getAttribute("rgbahex")!="0")return;
      if(!usealpha && supportsColorInput() && (thisInput.type=="text" || thisInput.type=="color")){
       var normalizedRgb=rootobj.normalizeRgb(thisInput)
       var datalistid=("list" in thisInput) ? namedColorsDatalist2() : ""
@@ -502,7 +502,7 @@ var useNativeColorPicker=function(thisInput,usealpha){
   
 var namedPattern=null
 var setPatternAndTitle=function(thisInput,usealpha){
-     if(thisInput.getAttribute("rgbahex")=="1")return;
+     if(thisInput.getAttribute("rgbahex")!="0")return;
      if(thisInput.tagName.toLowerCase()=="input" && thisInput.type=="text"){
       var numberOrPercent="\\s*-?(\\d+|\\d+(\\.\\d+)?%)\\s*"
       var number="\\s*-?\\d+(\\.\\d+)?\\s*"
@@ -518,7 +518,7 @@ var setPatternAndTitle=function(thisInput,usealpha){
           patternother+="|rgba\\("+numberOrPercent+","+numberOrPercent+","+numberOrPercent+","+number+"\\)"+
                       "|hsla\\("+number+","+percent+","+percent+","+number+"\\)"
       }
-      if(thisInput.getAttribute("rgbahex")=="1"){
+      if(thisInput.getAttribute("rgbahex")!="0"){
          patternother+="|[A-Fa-f0-9]{8,8}"
       }
       pattern+=patternother;
@@ -1104,30 +1104,29 @@ documentMouseMove:function(e){
     colorChangeEvent.trigger(c,input)
   }
   rootobj.setRgba=function(thisInput,cc){
-   thisInput.value=(thisInput.getAttribute("rgbahex")=="1") ? rgbToColorRgba(cc) : rgbToColorDisplay(cc);
+   var attr=thisInput.getAttribute("rgbahex");
+   if(attr=="1")thisInput.value=rgbToColorRgba(cc);
+   else if(attr=="2")thisInput.value=rgbToColorArgb(cc);
+   else thisInput.value=rgbToColorDisplay(cc);
   }
   rootobj.normalizeRgb=function(thisInput){
-    if(thisInput.getAttribute("rgbahex")=="1"){
-     return rgbaToColorRgba(colorRgbaToRgb(thisInput.value))
-    } else {
-     return rgbToColorHtml(colorToRgb(thisInput.value))
-    }
+   var attr=thisInput.getAttribute("rgbahex");
+   if(attr=="1")return rgbaToColorRgba(colorRgbaToRgba(thisInput.value))
+   else if(attr=="2")return rgbaToColorArgb(colorArgbToRgba(thisInput.value))
+   else return rgbToColorHtml(colorToRgb(thisInput.value))
   }
   rootobj.normalizeRgba=function(thisInput){
-    if(thisInput.getAttribute("rgbahex")=="1"){
-     return rgbaToColorRgba(colorRgbaToRgb(thisInput.value))
-    } else {
-     return rgbToColorHtml(colorToRgba(thisInput.value))
-    }
+   var attr=thisInput.getAttribute("rgbahex");
+   if(attr=="1")return rgbaToColorRgba(colorRgbaToRgba(thisInput.value))
+   else if(attr=="2")return rgbaToColorArgb(colorArgbToRgba(thisInput.value))
+   else return rgbToColorHtml(colorToRgba(thisInput.value))
   }
   rootobj.getRgba=function(thisInput){
-    if(thisInput.getAttribute("rgbahex")=="1"){
-      return colorRgbaToRgba(thisInput.value)||[0,0,0,255]
-    } else if(thisInput.getAttribute("usealpha")=="1"){
-      return colorToRgba(thisInput.value)||[0,0,0,255]
-    } else {
-      return colorToRgb(thisInput.value)||[0,0,0,255]
-    }
+   var attr=thisInput.getAttribute("rgbahex");
+   if(attr=="1")return colorRgbaToRgba(thisInput.value)||[0,0,0,255]
+   else if(attr=="2")return colorArgbToRgba(thisInput.value)||[0,0,0,255]
+   else if(thisInput.getAttribute("usealpha")=="1")return colorToRgba(thisInput.value)||[0,0,0,255]
+   else return colorToRgb(thisInput.value)||[0,0,0,255]
   }
   rootobj.doColorPreview=function(input,extra,button){
     var c=rootobj.getRgba(input)
@@ -1291,13 +1290,14 @@ documentMouseMove:function(e){
   rootobj.setColorPicker=function(thisInput,extra){
      var newextra={
       flat: ("flat" in extra) ? extra.flat : false,
+      argbhex: ("argbhex" in extra) ? extra.argbhex : false,
       rgbahex: ("rgbahex" in extra) ? extra.rgbahex : false,
       usealpha: ("usealpha" in extra) ? extra.usealpha : false,
       info: ("info" in extra && extra.info) ? extra.info : (defaultModel || rootobj.HueSatVal)
      }
      extra=newextra
      thisInput.setAttribute("usealpha",extra.usealpha ? "1" : "0")
-     thisInput.setAttribute("rgbahex",extra.rgbahex ? "1" : "0")
+     thisInput.setAttribute("rgbahex",extra.argbhex ? "2" : (extra.rgbahex ? "1" : "0"))
      try { thisInput.style.textShadow="none" }catch(e){}
      setPatternAndTitle(thisInput,extra.usealpha);
      for(var i=0;i<colorPickerAdapters.length;i++){
@@ -1312,6 +1312,17 @@ documentMouseMove:function(e){
       addListener(newInput,"click",onNewInputClickFunction(newInput,thisInput,extra))
      }
   }
+  rootobj.hasIdOrClassName=function(o,tag){
+   if(o.id.indexOf(tag)==0)return true;
+   if(o.className){ 
+    // there may be multiple class names so split them
+    var cns=o.className.replace(/^\s+|\s+$/g,"").split(/\s+/)
+    for(var i=0;i<cns.length;i++){
+     if(cns[i].indexOf(tag)==0)return true;
+    }
+   }
+   return false;
+  }
   addReadyListener(function(){ // set up color pickers
    var inputs=document.getElementsByTagName("input")
    var inputsArray=[];
@@ -1320,12 +1331,14 @@ documentMouseMove:function(e){
    for(var i=0;i<inputsArray.length;i++){
     var thisInput=inputsArray[i]
     if(thisInput.getAttribute("type")=="color" || 
-       (thisInput.type=="text" && thisInput.id.indexOf("color_")==0)){
-     rootobj.setColorPicker(thisInput,{usealpha:false,rgbahex:false})
-    } else if(thisInput.getAttribute("type")=="text" && thisInput.id.indexOf("rgbahex_")==0){
+       (thisInput.type=="text" && rootobj.hasIdOrClassName(thisInput,"color_"))){
+     rootobj.setColorPicker(thisInput,{usealpha:false})
+    } else if(thisInput.getAttribute("type")=="text" && rootobj.hasIdOrClassName(thisInput,"rgbahex_")){
      rootobj.setColorPicker(thisInput,{usealpha:true,rgbahex:true})
-    } else if(thisInput.getAttribute("type")=="text" && thisInput.id.indexOf("acolor_")==0){
-     rootobj.setColorPicker(thisInput,{usealpha:true,rgbahex:false})
+    } else if(thisInput.getAttribute("type")=="text" && rootobj.hasIdOrClassName(thisInput,"argbhex_")){
+     rootobj.setColorPicker(thisInput,{usealpha:true,argbhex:true})
+    } else if(thisInput.getAttribute("type")=="text" && rootobj.hasIdOrClassName(thisInput,"acolor_")){
+     rootobj.setColorPicker(thisInput,{usealpha:true})
     }
    }
   })
