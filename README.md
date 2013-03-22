@@ -1,9 +1,9 @@
 Color Picker
 ===========
 
-Written by Peter O. in 2012. http://upokecenter.dreamhosters.com/
+Written by Peter O. in 2012/2013. http://upokecenter.dreamhosters.com/
 
-A color picker in JavaScript. Supports adapters for integrating other popular color pickers, and can use native color selection controls. In the public domain.
+A color picker in JavaScript. Supports adapters for integrating other popular color pickers, and can use native color selection controls. In the public domain under CC0.
 
 ## Donate to me
 
@@ -22,6 +22,7 @@ When the page is ready, it will convert certain textboxes into color pickers:
 
 * Textboxes with IDs starting with "color_". and input elements with type "color", will be converted into normal color pickers.
 * Textboxes with IDs starting with "rgbahex_" will be converted into alpha color pickers that use the color format RRGGBBAA, with no "#" character, and with hexadecimal components.
+* Textboxes with IDs starting with "argbhex_" will be converted into alpha color pickers that use the color format AARRGGBB, with no "#" character, and with hexadecimal components.
 * Textboxes with IDs starting with "acolor_" will be converted into alpha color pickers.
 
 For more advanced features, use the following functions.
@@ -36,6 +37,7 @@ _input_ parameter is the HTML element for the input text box. The _extra_ parame
 3. flat - if true, shows the color selection control in-line rather than in the form of a text box and button. Default is false.
 
 4. rgbahex - if true, the color format used is RRGGBBAA, with hexadecimal components.
+5. argbhex - if true, the color format used is AARRGGBB, with hexadecimal components.
 PDColorPicker.getDefaultColorModel() - gets the default color model used by the color picker.
 The model is a JavaScript object with the following keys:
 
@@ -67,6 +69,7 @@ successfully. The _input_ parameter is the HTML element for the input text box. 
 2. info - the color model used.
 3. flat - if true, shows the color selection control in-line rather than in the form of a text box and button.
 4. rgbahex - if true, the color format used is RRGGBBAA, with hexadecimal components.
+5. argbhex - if true, the color format used is AARRGGBB, with hexadecimal components.
 
 **The following methods are generally only useful when making color picker adapters:**
 
