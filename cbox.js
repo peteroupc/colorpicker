@@ -413,32 +413,32 @@ namedColorsDatalist=function(){
   }
 
 var useNativeColorPicker=function(thisInput,usealpha){
+   if(thisInput.getAttribute("rgbahex")=="1")return;
      if(!usealpha && supportsColorInput() && (thisInput.type=="text" || thisInput.type=="color")){
-      var currentValue=thisInput.value
+      var normalizedRgb=normalizeRgb(thisInput)
       var datalistid=("list" in thisInput) ? namedColorsDatalist2() : ""
       var oldtitle=thisInput.getAttribute("title")
       var oldlist=thisInput.getAttribute("list") // list applies to "color" inputs differently from "text" inputs
       thisInput.type="color"
       thisInput.title=""
       thisInput.setAttribute("list",datalistid)
-      thisInput.value=rgbToColorHtml(colorToRgb(currentValue))
+      thisInput.value=normalizedRgb
       // needed because Chrome will align color box to
       // baseline and not to the middle like other input
       // elements
       thisInput.style.verticalAlign="middle"
       var infolink=document.createElement("a")
       infolink.href="javascript:void(null)"
-      infolink.innerHTML=thisInput.value
+      infolink.innerHTML=normalizedRgb
       if(thisInput.nextSibling)thisInput.parentNode.insertBefore(infolink,thisInput.nextSibling)
       else thisInput.parentNode.appendChild(infolink)
       var thisInputBlur=function(){
          if(thisInput.type=="text"){
            infolink.style.display="inline"
-           var currentValue=thisInput.value
            thisInput.type="color"
            thisInput.setAttribute("list",datalistid)
            thisInput.title=""
-           thisInput.value=rgbToColorHtml(colorToRgb(currentValue))
+           thisInput.value=normalizeRgb(thisInput)
            removeListener(thisInput,"blur",thisInputBlur)
          }
       }
@@ -502,6 +502,7 @@ var useNativeColorPicker=function(thisInput,usealpha){
   
 var namedPattern=null
 var setPatternAndTitle=function(thisInput,usealpha){
+     if(thisInput.getAttribute("rgbahex")=="1")return;
      if(thisInput.tagName.toLowerCase()=="input" && thisInput.type=="text"){
       var numberOrPercent="\\s*-?(\\d+|\\d+(\\.\\d+)?%)\\s*"
       var number="\\s*-?\\d+(\\.\\d+)?\\s*"
@@ -516,6 +517,9 @@ var setPatternAndTitle=function(thisInput,usealpha){
       if(usealpha){
           patternother+="|rgba\\("+numberOrPercent+","+numberOrPercent+","+numberOrPercent+","+number+"\\)"+
                       "|hsla\\("+number+","+percent+","+percent+","+number+"\\)"
+      }
+      if(thisInput.getAttribute("rgbahex")=="1"){
+         patternother+="|[A-Fa-f0-9]{8,8}"
       }
       pattern+=patternother;
       if(window.opera && supportsPattern()){
@@ -1095,13 +1099,39 @@ documentMouseMove:function(e){
   var colorPickerAdapters=[];
   rootobj.doColorChange=function(input,extra,button){
     var usealpha=extra.usealpha
-    var c=((usealpha ? colorToRgba : colorToRgb)(input.value))||[0,0,0,255]
+    var c=rootobj.getRgba(input)
     coloredInput(input,button)
     colorChangeEvent.trigger(c,input)
   }
+  rootobj.setRgba=function(thisInput,cc){
+   thisInput.value=(thisInput.getAttribute("rgbahex")=="1") ? rgbToColorRgba(cc) : rgbToColorDisplay(cc);
+  }
+  rootobj.normalizeRgb=function(thisInput){
+    if(thisInput.getAttribute("rgbahex")=="1"){
+     return rgbaToColorRgba(colorRgbaToRgb(thisInput.value))
+    } else {
+     return rgbToColorHtml(colorToRgb(thisInput.value))
+    }
+  }
+  rootobj.normalizeRgba=function(thisInput){
+    if(thisInput.getAttribute("rgbahex")=="1"){
+     return rgbaToColorRgba(colorRgbaToRgb(thisInput.value))
+    } else {
+     return rgbToColorHtml(colorToRgba(thisInput.value))
+    }
+  }
+  rootobj.getRgba=function(thisInput){
+    if(thisInput.getAttribute("rgbahex")=="1"){
+      return colorRgbaToRgba(thisInput.value)
+    } else if(thisInput.getAttribute("usealpha")=="1"){
+      return colorToRgba(thisInput.value)||[0,0,0,255]
+    } else {
+      return colorToRgb(thisInput.value)||[0,0,0,255]
+    }
+  }
   rootobj.doColorPreview=function(input,extra,button){
     var usealpha=extra.usealpha
-    var c=((usealpha ? colorToRgba : colorToRgb)(input.value))||[0,0,0,255]
+    var c=rootobj.getRgba(input)
     coloredInput(input,button)
     colorPreviewEvent.trigger(c,input)
   }
@@ -1159,7 +1189,7 @@ documentMouseMove:function(e){
    setTimeout(dobgcolordelayfunc(o,val),100)
   }
   var coloredInput=function(input,button){
-   var c=(colorToRgba(input.value)||[0,0,0,255])
+   var c=rootobj.getRgba(input)
    dobgcolordelay(input,rgbToColorHtml(c))
    removeFilter(input,"gradient")//IE's filter takes precedence over background, so remove
    input.style.color=(isRgbDark(c)) ? "white" : "black"
@@ -1184,14 +1214,13 @@ documentMouseMove:function(e){
         if(newInput)newInput.style.display="none"
         o.style.display="inline-block"
        }
-       var usealpha=extra.usealpha
-       var currentValue=((extra.usealpha ? colorToRgba : colorToRgb)(thisInput.value))||[0,0,0,255]
+       var currentValue=rootobj.getRgba(thisInput)
        o.style.left=getPageX(newInput)+"px"
        o.style.top=(getPageY(newInput)+getHeight(newInput))+"px"
        o.style.margin="0px"
        var cp=new mycolorpicker(extra.info,o,currentValue,extra.usealpha)
        cp.setChangeCallback(function(cc){
-         thisInput.value=rgbToColorDisplay(cc);
+         rootobj.setRgba(thisInput,cc)
          coloredInput(thisInput,newInput);
          colorPreviewEvent.trigger(cc,thisInput)         
        })
@@ -1203,7 +1232,7 @@ documentMouseMove:function(e){
            removeListener(document,"keydown",binder.bind(keydown))
            removeListener(document,"click",binder.bind(docclick))
            removeListener(document,"mousedown",binder.bind(docdown))
-           var cc=((usealpha ? colorToRgba : colorToRgb)(thisInput.value))||[0,0,0,255]
+           var cc=rootobj.getRgba(thisInput)
            colorChangeEvent.trigger(cc,thisInput)
        }
        var keydown=function(e){
@@ -1247,12 +1276,10 @@ documentMouseMove:function(e){
      removeFilter(newInput,"gradient")// try again in case filter wasn't removed
      var chgfunc=function(newInput,thisInput,useAlpha){
       return function(){
-          var c=((usealpha ? colorToRgba : colorToRgb)(thisInput.value))||[0,0,0,255]
-          oldvalue=thisInput.value
+          var c=rootobj.getRgba(thisInput)
           coloredInput(thisInput,newInput)
           colorChangeEvent.trigger(c,thisInput)
      }}
-     var oldvalue=thisInput.value
      var changefunc=chgfunc(newInput,thisInput,usealpha)
      // because of suggestions, use "input" instead of "keyup" if
      // supported by the browser (IE9 supports input only partially;
@@ -1265,10 +1292,13 @@ documentMouseMove:function(e){
   rootobj.setColorPicker=function(thisInput,extra){
      var newextra={
       flat: ("flat" in extra) ? extra.flat : false,
+      rgbahex: ("rgbahex" in extra) ? extra.rgbahex : false,
       usealpha: ("usealpha" in extra) ? extra.usealpha : false,
       info: ("info" in extra && extra.info) ? extra.info : (defaultModel || rootobj.HueSatVal)
      }
      extra=newextra
+     thisInput.setAttribute("usealpha",extra.usealpha ? "1" : "0")
+     thisInput.setAttribute("rgbahex",extra.rgbahex ? "1" : "0")
      try { thisInput.style.textShadow="none" }catch(e){}
      setPatternAndTitle(thisInput,extra.usealpha);
      for(var i=0;i<colorPickerAdapters.length;i++){
@@ -1292,9 +1322,11 @@ documentMouseMove:function(e){
     var thisInput=inputsArray[i]
     if(thisInput.getAttribute("type")=="color" || 
        (thisInput.type=="text" && thisInput.id.indexOf("color_")==0)){
-     rootobj.setColorPicker(thisInput,{usealpha:false})
+     rootobj.setColorPicker(thisInput,{usealpha:false,rgbahex:false})
+    } else if(thisInput.getAttribute("type")=="text" && thisInput.id.indexOf("rgbahex_")==0){
+     rootobj.setColorPicker(thisInput,{usealpha:true,rgbahex:true})
     } else if(thisInput.getAttribute("type")=="text" && thisInput.id.indexOf("acolor_")==0){
-     rootobj.setColorPicker(thisInput,{usealpha:true})
+     rootobj.setColorPicker(thisInput,{usealpha:true,rgbahex:false})
     }
    }
   })
