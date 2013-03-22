@@ -581,6 +581,40 @@ function rgbToColorDisplay(rgb){
   return rgbToColor(rgb).replace(/\s+/g,"")
  }
 }
+
+function colorRgbaToRgba(value){
+ if(e=(/^([A-Fa-f0-9]{2})([A-Fa-f0-9]{2})([A-Fa-f0-9]{2})([A-Fa-f0-9]{2})$/.exec(value))){
+  return [parseInt(e[1],16),parseInt(e[2],16),parseInt(e[3],16),parseInt(e[4],16)]
+ }
+ return colorToRgba(value)
+}
+
+function rgbToColorRgba(r,g,b,a){
+ if(!rgbToColorHtml.table){
+  rgbToColorHtml.table=[]
+  for(var i=0;i<256;i++){
+   var y=i.toString(16).toLowerCase()
+   rgbToColorHtml.table[i]=(y.length==1) ? "0"+y : y
+  }
+ }
+ var c;
+ var tbl=rgbToColorHtml.table;
+ if(r!=null && g==null && b==null){
+   var a=(r[3]==null) ? 255 : r[3]
+   return tbl[((c=Math.round(r[0]))<0 ? 0 : (c>255 ? 255 : c))]
+        +tbl[((c=Math.round(r[1]))<0 ? 0 : (c>255 ? 255 : c))]
+        +tbl[((c=Math.round(r[2]))<0 ? 0 : (c>255 ? 255 : c))]
+        +tbl[((c=Math.round(a))<0 ? 0 : (c>255 ? 255 : c))]
+ } else {
+   if(a==null)a=255;
+   return tbl[((c=Math.round(r))<0 ? 0 : (c>255 ? 255 : c))]
+        +tbl[((c=Math.round(g))<0 ? 0 : (c>255 ? 255 : c))]
+        +tbl[((c=Math.round(b))<0 ? 0 : (c>255 ? 255 : c))]
+        +tbl[((c=Math.round(a))<0 ? 0 : (c>255 ? 255 : c))]
+ }
+}
+
+
 function rgbToColorHtml(r,g,b){
  if(!rgbToColorHtml.table){
   rgbToColorHtml.table=[]
