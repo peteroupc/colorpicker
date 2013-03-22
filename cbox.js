@@ -415,7 +415,7 @@ namedColorsDatalist=function(){
 var useNativeColorPicker=function(thisInput,usealpha){
    if(thisInput.getAttribute("rgbahex")=="1")return;
      if(!usealpha && supportsColorInput() && (thisInput.type=="text" || thisInput.type=="color")){
-      var normalizedRgb=normalizeRgb(thisInput)
+      var normalizedRgb=rootobj.normalizeRgb(thisInput)
       var datalistid=("list" in thisInput) ? namedColorsDatalist2() : ""
       var oldtitle=thisInput.getAttribute("title")
       var oldlist=thisInput.getAttribute("list") // list applies to "color" inputs differently from "text" inputs
@@ -438,7 +438,7 @@ var useNativeColorPicker=function(thisInput,usealpha){
            thisInput.type="color"
            thisInput.setAttribute("list",datalistid)
            thisInput.title=""
-           thisInput.value=normalizeRgb(thisInput)
+           thisInput.value=rootobj.normalizeRgb(thisInput)
            removeListener(thisInput,"blur",thisInputBlur)
          }
       }
@@ -1122,7 +1122,7 @@ documentMouseMove:function(e){
   }
   rootobj.getRgba=function(thisInput){
     if(thisInput.getAttribute("rgbahex")=="1"){
-      return colorRgbaToRgba(thisInput.value)
+      return colorRgbaToRgba(thisInput.value)||[0,0,0,255]
     } else if(thisInput.getAttribute("usealpha")=="1"){
       return colorToRgba(thisInput.value)||[0,0,0,255]
     } else {
