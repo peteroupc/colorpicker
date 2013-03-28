@@ -1,4 +1,4 @@
-/* This file is in the public domain. Peter O., 2012. http://upokecenter.dreamhosters.com 
+/* This file is in the public domain. Peter O., 2012-2013. http://upokecenter.dreamhosters.com 
     Public domain dedication: http://creativecommons.org/publicdomain/zero/1.0/  */
 
 (function(window,rootobj){
@@ -1271,9 +1271,10 @@ documentMouseMove:function(e){
      } while(document.getElementById(bidstring))
      newInput.id=bidstring; 
      thisInput.parentNode.insertBefore(newInput,thisInput)
-     removeFilter(newInput,"gradient")// try again in case filter wasn't removed
+     removeFilter(newInput,"gradient");// try again in case filter wasn't removed
      var chgfunc=function(newInput,thisInput,useAlpha){
       return function(){
+          //console.log([thisInput.id,thisInput.value,"I"])
           var c=rootobj.getRgba(thisInput)
           coloredInput(thisInput,newInput)
           colorChangeEvent.trigger(c,thisInput)
@@ -1284,7 +1285,7 @@ documentMouseMove:function(e){
      // backspace doesn't trigger the input event)
      addListener(thisInput,("oninput" in thisInput && !ieversionorbelow(9)) ? 
       "input" : "keyup",changefunc)
-     addListener(thisInput,"change",changefunc)   
+     addListener(thisInput,"change",changefunc)
      return newInput;     
   }
   rootobj.setColorPicker=function(thisInput,extra){
