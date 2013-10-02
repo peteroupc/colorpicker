@@ -1,8 +1,16 @@
 /* This file is in the public domain. Peter O., 2012-2013. http://upokecenter.dreamhosters.com
     Public domain dedication: http://creativecommons.org/publicdomain/zero/1.0/  */
 
+/* global getComputedValue, getWidth, getHeight, getPageX,
+   getPageY, setPageX, setPageY, setWidth, setHeight, rgbToColor,
+   colorToRgba, subclass, colorToRgb, rgbToColorHtml, removeListener,
+   addListener, addReadyListener, rgbaToColorRgba, rgbaToColorArgb,
+   rgbToColorDisplay, colorRgbaToRgba, colorArgbToRgba, isRgbDark,
+   MethodBinder, eventDetails, 
+   rgbToColorRgba, rgbToColorArgb */
 (function(window,rootobj){
-  var doNothingURL="javascript:void(null)";
+  "use strict";
+var doNothingURL="javascript:void(null)";
   var removeFilter=function(o,filter){
    if("filter" in o.style){
     var fs=(o.style.filter||"");
@@ -73,13 +81,13 @@
   }
  };
  var applyCssGradient=function(o,colors){
- if(!o || !colors || colors.length===0)return false ;// no colors
+ if(!o || !colors || colors.length===0)return false;// no colors
  var colorstrings=[];
  for(var i=0;i<colors.length;i++){
   if(colors[i] && colors[i].constructor===Array)
    colorstrings[colorstrings.length]=rgbToColor(colors[i]);
   else
-   colorstrings[colorstrings.length]=""+colors[i] ;
+   colorstrings[colorstrings.length]=""+colors[i];
  }
  if(colors.length===1){ // single color
   o.style.backgroundColor=colorstrings[0];
@@ -338,10 +346,11 @@ changecolor:function(x,y,current){
 
 ////////////////
 
-  var _namedColorsDatalist=null;
-namedColorsDatalist=function(){
-   if((_namedColorsDatalist!==null && typeof _namedColorsDatalist!=="undefined"))return _namedColorsDatalist;
- colorToRgba.setUpNamedColors();var b=[];
+  var _namedColorsDatalist=[];
+var namedColorsDatalist=function(){
+   if(_namedColorsDatalist.length>0)
+     return _namedColorsDatalist;
+ colorToRgba.setUpNamedColors();var b=_namedColorsDatalist;
  var datalist=document.createElement("datalist");
  for(var o in colorToRgba.namedColors){
   var v=colorToRgba.namedColors[o];
@@ -498,9 +507,9 @@ var useNativeColorPicker=function(thisInput,usealpha){
     if(!a || a.length===0)continue;
     var inval=false;
     if(inp.getAttribute("required")!==null && inp.value.length===0){
-            alert("Please fill in the field: "+inp.title);inval=true;
+            window.alert("Please fill in the field: "+inp.title);inval=true;
     } else if(inp.value.length>0 && !(new RegExp("^(?:"+a+")$").test(inp.value))){
-            alert("Please match the requested format: "+inp.title);inval=true;
+            window.alert("Please match the requested format: "+inp.title);inval=true;
     }
     if(inval){
             inp.focus();
@@ -564,7 +573,7 @@ var setPatternAndTitle=function(thisInput,usealpha){
 };
 
 ////////////////
-var mycolorpicker=subclass(Object,{
+var MyColorPicker=subclass(Object,{
 initialize:function(info,parent,startingvalue,usealpha){
   var w=window;
   this.binder=new MethodBinder(this);
@@ -574,6 +583,7 @@ initialize:function(info,parent,startingvalue,usealpha){
   if(ieversionorbelow(6))this.isoriginal=false;
   else if(!(navigator.userAgent.indexOf("MSIE ")>=0 ||
    navigator.userAgent.indexOf("like Mac OS X")>=0 ||
+   navigator.userAgent.indexOf("like Gecko")>=0 ||
    navigator.userAgent.indexOf("Opera/")>=0 ||
    navigator.userAgent.indexOf("AppleWebKit/")>=0 ||
    navigator.userAgent.indexOf("Gecko/")>=0))this.isoriginal=false;
@@ -614,7 +624,7 @@ initialize:function(info,parent,startingvalue,usealpha){
   this.endy=this.starty+this.pheight;
   this.p.style.border="1px solid black";
   this.p.style.zIndex=100;
-  try { this.p.style.borderRadius=this.padding+"px" ; }catch(e){}
+  try { this.p.style.borderRadius=this.padding+"px" ; }catch(ex){}
   this.p.style.backgroundColor="white";
   this.p.style.width=this.pwidth+"px";
   this.p.style.height=this.pheight+"px";
@@ -1087,7 +1097,8 @@ documentMouseMove:function(e){
   initialize:function(){ this.handlers=[]; },
   add:function(func){ if(func)this.handlers.push(func) ;      },
   remove:function(func){
-   var newhandlers=[]; removed=false;
+   var newhandlers=[];
+   var removed=false;
    for(var i=0;i<this.handlers.length;i++){
     if(this.handlers[i]===func && !removed){
      newhandlers[newhandlers.length]=this.handlers[i];
@@ -1173,7 +1184,7 @@ documentMouseMove:function(e){
     if((_supportsColorInput!==null && typeof _supportsColorInput!=="undefined"))return _supportsColorInput;
     var f=document.createElement("form");
     var inp=document.createElement("input");
-    try { inp.type="color" ; } catch(e){
+    try { inp.type="color" ; } catch(ex){
       _supportsColorInput=false; return _supportsColorInput; }
     inp.style.display="none";
     f.style.display="none";
@@ -1188,7 +1199,7 @@ documentMouseMove:function(e){
    return function(){
       if(o.getAttribute("data-currentbgcolor")===val){
        try { o.style.background=val;
-       } catch(e){ o.style.background=rgbToColorHtml(colorToRgba(val)) ; }
+       } catch(ex){ o.style.background=rgbToColorHtml(colorToRgba(val)) ; }
        o.setAttribute("data-currentbgcolor","");
       }
      };
@@ -1199,7 +1210,7 @@ documentMouseMove:function(e){
     nobgcolordelay=(!ieversionorbelow(8));
    if(nobgcolordelay){
     try { o.style.background=val; }
-    catch(e){ o.style.background=rgbToColorHtml(colorToRgba(val)) ; }  return;
+    catch(ex){ o.style.background=rgbToColorHtml(colorToRgba(val)) ; }  return;
    }
    o.setAttribute("data-currentbgcolor",val);
    setTimeout(dobgcolordelayfunc(o,val),100);
@@ -1235,7 +1246,7 @@ documentMouseMove:function(e){
        o.style.left=getPageX(newInput)+"px";
        o.style.top=(getPageY(newInput)+getHeight(newInput))+"px";
        o.style.margin="0px";
-       var cp=new mycolorpicker(extra.info,o,currentValue,extra.usealpha);
+       var cp=new MyColorPicker(extra.info,o,currentValue,extra.usealpha);
        cp.setChangeCallback(function(cc){
          rootobj.setRgba(thisInput,cc);
          coloredInput(thisInput,newInput);
@@ -1284,7 +1295,7 @@ documentMouseMove:function(e){
      newInput.type="button";
      newInput.value="...";
      coloredInput(thisInput,newInput);
-     try { newInput.style.textShadow="none"; }catch(e){}
+     try { newInput.style.textShadow="none"; }catch(ex){}
      var bid=0; var bidstring=""; do {
       bidstring="colorpickerbuttonid"+bid; bid+=1;
      } while(document.getElementById(bidstring));
@@ -1320,7 +1331,7 @@ documentMouseMove:function(e){
      extra=newextra;
      thisInput.setAttribute("usealpha",extra.usealpha ? "1" : "0");
      thisInput.setAttribute("rgbahex",extra.argbhex ? "2" : (extra.rgbahex ? "1" : "0"));
-     try { thisInput.style.textShadow="none"; }catch(e){}
+     try { thisInput.style.textShadow="none"; }catch(ex){}
      setPatternAndTitle(thisInput,extra.usealpha);
      for(var i=0;i<colorPickerAdapters.length;i++){
        if((colorPickerAdapters[i])(thisInput,extra)){return;}

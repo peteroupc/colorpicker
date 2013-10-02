@@ -6,7 +6,8 @@
 // elem - An HTML element.
 // prop - A CSS property (such as 'background-color')
 function getComputedValue(elem,prop){ // expects syntax like 'background-color'
- if(!elem)return null;
+ "use strict";
+if(!elem)return null;
  if(!("gcs" in getComputedValue) && document.defaultView && document.defaultView.getComputedStyle){
   // expects syntax like 'background-color'
   // cache value, since function may be slow if called many times
@@ -17,8 +18,7 @@ function getComputedValue(elem,prop){ // expects syntax like 'background-color'
  } else if(!("gcs" in getComputedValue)){
   getComputedValue.gcs=null;
  }
- if("gcs" in getComputedValue && getComputedValue.gcs!==null &&
-   typeof getComputedValue.gcs!=="undefined")
+ if("gcs" in getComputedValue && (typeof getComputedValue.gcs!=="undefined" && getComputedValue.gcs!==null))
   return getComputedValue.gcs.getComputedStyle(elem,null).getPropertyValue(prop);
  if(elem){
   try {
@@ -31,7 +31,7 @@ function getComputedValue(elem,prop){ // expects syntax like 'background-color'
     }
     return elem.currentStyle[prop];
    }
-  } catch(e){}
+  } catch(ex){}
   // Just get regular style
   if("style" in elem){
    // expects syntax like 'backgroundColor'
@@ -47,10 +47,11 @@ function getComputedValue(elem,prop){ // expects syntax like 'background-color'
 }
 
 function getHeight(o) {
-  if(!o)return 0;
+  "use strict";
+if(!o)return 0;
   if(document.layers)return ((o.height)?o.height:o.clip.height);
   var x=(
-    (window.opera&&typeof o.style.pixelHeight!=='undefined')?
+    (window.opera&&typeof o.style.pixelHeight!=="undefined")?
     o.style.pixelHeight:
     o.offsetHeight
    );
@@ -61,17 +62,19 @@ function getHeight(o) {
   return x;
 }
 function setHeight(o,h) {
-  if(!o)return 0;if(o.clip)
+  "use strict";
+if(!o)return 0;if(o.clip)
    o.clip.height=h;
-  else if(window.opera && typeof o.style.pixelHeight !== 'undefined')
+  else if(window.opera && typeof o.style.pixelHeight !== "undefined")
    o.style.pixelHeight=h;
   else
    o.style.height=h+"px";
 }
 function getWidth(o) {
-  if(!o)return 0;
+  "use strict";
+if(!o)return 0;
   if(document.layers)return ((o.width)?o.width:o.clip.width);
-  var x=(window.opera && typeof o.style.pixelWidth!=='undefined')?
+  var x=(window.opera && typeof o.style.pixelWidth!=="undefined")?
     o.style.pixelWidth:
     o.offsetWidth;
   if(x===0){
@@ -81,37 +84,41 @@ function getWidth(o) {
   return x;
 }
 function setWidth(o,w) {
-  if(!o)return 0;if(o.clip)
+  "use strict";
+if(!o)return 0;if(o.clip)
    o.clip.width=w;
-  else if(window.opera && typeof o.style.pixelWidth !== 'undefined')
+  else if(window.opera && typeof o.style.pixelWidth !== "undefined")
    o.style.pixelWidth=w;
   else
    o.style.width=w+"px";
 }
 function setPageX(e,x){
- if(!e||isNaN(x))return;
+ "use strict";
+if(!e||isNaN(x))return;
  var estyle=e.style;
  if (estyle){
-   if("left" in estyle)estyle.left=x+'px';
-   else if("pixelLeft" in estyle)estyle.pixelLeft=x+'px';
+   if("left" in estyle)estyle.left=x+"px";
+   else if("pixelLeft" in estyle)estyle.pixelLeft=x+"px";
  } else if(typeof e.left!=="undefined") {
     e.left=x;
  }
 }
 
 function setPageY(e,x){
- if(!e||isNaN(x))return;
+ "use strict";
+if(!e||isNaN(x))return;
  var estyle=e.style;
  if (estyle){
-   if("top" in estyle)estyle.top=x+'px';
-   else if("pixelTop" in estyle)estyle.pixelTop=x+'px';
+   if("top" in estyle)estyle.top=x+"px";
+   else if("pixelTop" in estyle)estyle.pixelTop=x+"px";
  } else if(typeof e.top!=="undefined") {
     e.top=x;
  }
 }
 
 function getPageX(o) {
- var x=0;
+ "use strict";
+var x=0;
  if(!o)return 0;
  if(document.layers)
   x=o.pageX;
@@ -125,7 +132,8 @@ function getPageX(o) {
  return x;
 }
 function getPageY(o) {
- var x=0;
+ "use strict";
+var x=0;
  if(!o)return 0;
  if(document.layers)
   x=o.pageY;
@@ -140,7 +148,8 @@ function getPageY(o) {
 }
 
 function addListener(o,e,f){
-  if(!o)return;
+  "use strict";
+if(!o)return;
   if(e==="mousewheel" && !("onmousewheel" in document))
    e="DOMMouseScroll";
   if(typeof o.addEventListener!=="undefined")
@@ -148,9 +157,11 @@ function addListener(o,e,f){
   else if(typeof o.attachEvent!=="undefined")
    o.attachEvent("on"+e,addListener.bind(o,"on"+e,f));
 }
-addListener.bind=function(o,e,f){ return f;};
+addListener.bind=function(o,e,f){ "use strict";
+return f;};
 function removeListener(o,e,f){
-  if(!o)return;
+  "use strict";
+if(!o)return;
   if(e==="mousewheel" && navigator.userAgent.indexOf("Gecko/")>=0)
    e="DOMMouseScroll";
   try {
@@ -172,7 +183,8 @@ function removeListener(o,e,f){
 
 
 function extendObject(o,values){
- if(!o||!values)return;
+ "use strict";
+if(!o||!values)return;
  for(var i in values){
   o[i]=values[i];
  }
@@ -186,7 +198,8 @@ function extendObject(o,values){
 // constructor.  Members with the same name in the subclass
 // are overridden.
 function subclass(otherClass,newMembers){
- var func=function(){
+ "use strict";
+var func=function(){
   // call the initialize method (constructor)
   this.initialize.apply(this,arguments);
  };
@@ -226,7 +239,8 @@ function MyClass(name){
 }
 */
 function MethodBinder(obj){
- this.methods={};
+ "use strict";
+this.methods={};
  this.obj=obj;
  // Returns a method in which the method's arguments
  // are called for a specific instance of an object.
@@ -250,6 +264,7 @@ function MethodBinder(obj){
 
 (function(window){
 
+"use strict";
 var __isMouse=function(eventType){
      return (/(click|mouse|menu|touch)/.test(eventType) || eventType==="DOMMouseScroll");
 };
@@ -301,7 +316,7 @@ var eventDetailsFunc={
     this.event.preventDefault();
   } else if(window.event){
    window.event.returnValue=false;
-   try{ window.event.keyCode=-1; }catch(e){}
+   try{ window.event.keyCode=-1; }catch(ex){}
   }
   return false;
  },
@@ -350,7 +365,7 @@ window.addReadyListener=function(func){
 //    console.log("DOMContent")
     if(!functionCalled){isDomContent=true;functionCalled=true;func();}
   });
-  addListener(window,'load',function(){
+  addListener(window,"load",function(){
 //    console.log("DOMContent2")
     if(!functionCalled){isDomContent=true;functionCalled=true;func();}
   });
@@ -363,7 +378,7 @@ window.addReadyListener=function(func){
  } else if(("attachEvent" in document) && window===top){
    readyCheck = setInterval(function(){
      if(!isDomContent){
-      try { document.body.doScroll("left"); isDomContent=true;} catch(e){return; }
+      try { document.body.doScroll("left"); isDomContent=true;} catch(ex){return; }
      }
      if (isDomContent){
       clearInterval(readyCheck);
@@ -372,7 +387,7 @@ window.addReadyListener=function(func){
      }
    },10);
  } else {
-  addListener(window,'load',func);
+  addListener(window,"load",func);
  }
 };
 })(window);
@@ -380,7 +395,8 @@ window.addReadyListener=function(func){
 ////////////////////////////////
 
 function hlsToRgb(hls) {
- var hueval=hls[0]*1.0;//[0-360)
+ "use strict";
+var hueval=hls[0]*1.0;//[0-360)
  var lum=hls[1]*1.0;//[0-255]
  var sat=hls[2]*1.0;//[0-255]
  lum=(lum<0 ? 0 : (lum>255 ? 255 : lum));
@@ -429,9 +445,10 @@ function hlsToRgb(hls) {
 // green, blue, and alpha (each from 0-255)
 // Returns null if the color can't be converted
 function colorToRgba(x){
- var e=null;
+ "use strict";
+var e=null;
  if(!x)return null;
- var c,r1,r2,r3,r4,rgb;
+ var b,c,r1,r2,r3,r4,rgb;
  if((e=(/^#([A-Fa-f0-9]{2})([A-Fa-f0-9]{2})([A-Fa-f0-9]{2})$/.exec(x)))!==null){
   return [parseInt(e[1],16),parseInt(e[2],16),parseInt(e[3],16),255];
  } else if((e=(/^rgb\(\s*([\+\-]?\d+(?:\.\d+)?%)\s*,\s*([\+\-]?\d+(?:\.\d+)?%)\s*,\s*([\+\-]?\d+(?:\.\d+)?%)\s*\)$/.exec(x)))!==null){
@@ -486,7 +503,8 @@ function colorToRgba(x){
 }
 
 colorToRgba.setUpNamedColors=function(){
-  if(!colorToRgba.namedColors){
+  "use strict";
+if(!colorToRgba.namedColors){
     var nc=("aliceblue,f0f8ff,antiquewhite,faebd7,aqua,00ffff,aquamarine,7fffd4,azure,f0ffff,beige,f5f5dc,bisque,ffe4c4,black,000000,blanchedalmond,ffebcd,blue,0000ff,"+
 "blueviolet,8a2be2,brown,a52a2a,burlywood,deb887,cadetblue,5f9ea0,chartreuse,7fff00,chocolate,d2691e,coral,ff7f50,cornflowerblue,6495ed,cornsilk,fff8dc,"+
 "crimson,dc143c,cyan,00ffff,darkblue,00008b,darkcyan,008b8b,darkgoldenrod,b8860b,darkgray,a9a9a9,darkgreen,006400,darkkhaki,bdb76b,darkmagenta,8b008b,"+
@@ -512,7 +530,8 @@ colorToRgba.setUpNamedColors=function(){
 
 function colorToRgb(x){
  // don't include rgba or hsla
- if(x.indexOf("rgba")===0 || x.indexOf("hsla")===0)return null;
+ "use strict";
+if(x.indexOf("rgba")===0 || x.indexOf("hsla")===0)return null;
  var rgba=colorToRgba(x);
  if(!rgba||rgba[3]===0)return null ;// transparent
  return [rgba[0],rgba[1],rgba[2],255];
@@ -523,7 +542,8 @@ function colorToRgb(x){
 // green, and blue (each from 0-255), with optional alpha (0-255)
 function rgbToColor(x){
  // we should include the spaces
- if((x.length>3 && (x[3]===255 || (x[3]===null || typeof x[3]==="undefined"))) || x.length===3){
+ "use strict";
+if((x.length>3 && (x[3]===255 || (x[3]===null || typeof x[3]==="undefined"))) || x.length===3){
   return "rgb("+Math.round(x[0])+", "+Math.round(x[1])+", "+Math.round(x[2])+")";
  } else {
   var prec=Math.round((x[3]/255.0) * Math.pow(10, 2)) / Math.pow(10, 2);
@@ -532,14 +552,18 @@ function rgbToColor(x){
 }
 
 function colorRgbaToRgba(value){
- if((e=(/^([A-Fa-f0-9]{2})([A-Fa-f0-9]{2})([A-Fa-f0-9]{2})([A-Fa-f0-9]{2})$/.exec(value)))!==null){
+ "use strict";
+var e;
+if((e=(/^([A-Fa-f0-9]{2})([A-Fa-f0-9]{2})([A-Fa-f0-9]{2})([A-Fa-f0-9]{2})$/.exec(value)))!==null){
   return [parseInt(e[1],16),parseInt(e[2],16),parseInt(e[3],16),parseInt(e[4],16)];
  }
  return colorToRgba(value);
 }
 
 function colorArgbToRgba(value){
- if((e=(/^([A-Fa-f0-9]{2})([A-Fa-f0-9]{2})([A-Fa-f0-9]{2})([A-Fa-f0-9]{2})$/.exec(value)))!==null){
+ "use strict";
+var e;
+if((e=(/^([A-Fa-f0-9]{2})([A-Fa-f0-9]{2})([A-Fa-f0-9]{2})([A-Fa-f0-9]{2})$/.exec(value)))!==null){
   return [parseInt(e[2],16),parseInt(e[3],16),parseInt(e[4],16),parseInt(e[1],16)];
  }
  return colorToRgba(value);
@@ -547,7 +571,8 @@ function colorArgbToRgba(value){
 
 
 function rgbToColorRgba(r,g,b,a){
- if(!rgbToColorRgba.table){
+ "use strict";
+if(!rgbToColorRgba.table){
   rgbToColorRgba.table=[];
   for(var i=0;i<256;i++){
    var y=i.toString(16).toLowerCase();
@@ -572,7 +597,8 @@ function rgbToColorRgba(r,g,b,a){
 }
 
 function rgbToColorArgb(r,g,b,a){
- if((r!==null && typeof r!=="undefined") && (g===null || typeof g==="undefined") && (b===null || typeof b==="undefined")){
+ "use strict";
+if((r!==null && typeof r!=="undefined") && (g===null || typeof g==="undefined") && (b===null || typeof b==="undefined")){
   return rgbToColorRgba(r[3],r[0],r[1],r[2]);
  } else {
   return rgbToColorRgba(a,r,g,b);
@@ -580,7 +606,8 @@ function rgbToColorArgb(r,g,b,a){
 }
 
 function rgbToColorHtml(r,g,b){
- if(!rgbToColorRgba.table){
+ "use strict";
+if(!rgbToColorRgba.table){
   rgbToColorRgba.table=[];
   for(var i=0;i<256;i++){
    var y=i.toString(16).toLowerCase();
@@ -601,13 +628,15 @@ function rgbToColorHtml(r,g,b){
 }
 
 function isRgbDark(rgb){
- return((rgb[0]*299)+(rgb[1]*587)+(rgb[2]*114))/1000<=127.5;
+ "use strict";
+return((rgb[0]*299)+(rgb[1]*587)+(rgb[2]*114))/1000<=127.5;
 }
 
 
 
 colorToRgba.namedColorsPattern=function(){
- colorToRgba.setUpNamedColors();var b=[];
+ "use strict";
+colorToRgba.setUpNamedColors();var b=[];
  for(var o in colorToRgba.namedColors){
   var v=colorToRgba.namedColors[o];
   if(typeof v==="string"){
@@ -628,7 +657,8 @@ colorToRgba.namedColorsPattern=function(){
 };
 
 function colorHtmlToRgba(x){
- var arr=[];
+ "use strict";
+var arr=[];
  colorToRgba.setUpNamedColors();
  if(!x || x.length===0)return [0,0,0,255];
  x=x.toLowerCase();
@@ -663,10 +693,10 @@ function colorHtmlToRgba(x){
 }
 
 function rgbToColorDisplay(rgb){
- if(rgb.length===3 || (rgb.length>3 && ((rgb[3]===null || typeof rgb[3]==="undefined") || rgb[3]===255))){
+ "use strict";
+if(rgb.length===3 || (rgb.length>3 && ((rgb[3]===null || typeof rgb[3]==="undefined") || rgb[3]===255))){
   return rgbToColorHtml(rgb);
  } else {
   return rgbToColor(rgb).replace(/\s+/g,"");
  }
 }
-
