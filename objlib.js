@@ -1,4 +1,4 @@
-/* This file is in the public domain. Peter O., 2012. http://upokecenter.dreamhosters.com
+/* This file is in the public domain. Peter O., 2012-2013. http://upokecenter.dreamhosters.com
     Public domain dedication: http://creativecommons.org/publicdomain/zero/1.0/  */
 
 // Calculates the actual style of an HTML element.
@@ -180,14 +180,71 @@ if(!o)return;
 
 
 
-
-
-function extendObject(o,values){
+// Gets the visible rectangle of a Web page
+function getViewport(){
  "use strict";
-if(!o||!values)return;
- for(var i in values){
-  o[i]=values[i];
+ var ret={left:0, top:0, width:0, height:0};
+ var d=document;
+ var db=document.body||null;
+ var dde=document.documentElement||null;
+ var win=("parentWindow" in d) ? d.parentWindow : window;
+ // exclude scrollbars, so check these items in order;
+ // check document.body, then document.documentElement
+ if(db && "clientWidth" in db){
+     ret.width=db.clientWidth;
+ } else if(dde && "clientWidth" in dde){
+      ret.width=dde.clientWidth;
+ } else if(db && "scrollWidth" in db){
+      ret.width=db.scrollWidth;
+ } else if(dde && "scrollWidth" in dde){
+      ret.width=dde.scrollWidth;
+ } else if(win && "innerWidth" in win){
+     ret.width=win.innerWidth;
+ } else if(db && "offsetWidth" in db){
+      ret.width=db.offsetWidth;
+ } else if(dde && "offsetWidth" in dde){
+      ret.width=dde.offsetWidth;
+ } else if(d.width){
+      ret.width=d.width;
  }
+ // exclude scrollbars, so check these items in order; 
+ // document.documentElement.clientHeight contains
+ // the best estimate of the viewport height
+ if(dde && "clientHeight" in dde){
+     ret.height=dde.clientHeight;
+ } else if(db && "clientHeight" in db){
+ // the following may overestimate the height
+      ret.height=db.clientHeight;
+ } else if(win && "innerHeight" in win){
+     ret.height=win.innerHeight;
+ } else if(db && "offsetHeight" in db){
+      ret.height=db.offsetHeight;
+ } else if(dde && "offsetHeight" in dde){
+      ret.height=dde.offsetHeight;
+ } else if(db && "scrollHeight" in db){
+      ret.height=db.scrollHeight;
+ } else if(dde && "scrollHeight" in dde){
+      ret.height=dde.scrollHeight;
+ } else if(d.height){
+      ret.height=d.height
+ }
+if(dde&&dde.scrollTop)
+  ret.top=dde.scrollTop;
+ else if(db&&db.scrollTop)
+  ret.top=db.scrollTop;
+ else if(window.pageYOffset)
+  ret.top=window.pageYOffset;
+ else if(window.scrollY)
+  ret.top=window.scrollY;
+if(dde&&dde.scrollLeft)
+  ret.left=dde.scrollLeft;
+ else if(db&&db.scrollLeft)
+  ret.left=db.scrollLeft;
+ else if(window.pageXOffset)
+  ret.left=window.pageXOffset;
+ else if(window.scrollX)
+  ret.left=window.scrollX;
+ return ret;
 }
 
 // Allows the definition of classes.
@@ -204,14 +261,16 @@ var func=function(){
   this.initialize.apply(this,arguments);
  };
  // Existing members
- extendObject(func.prototype,otherClass.prototype);
+ for(var i in otherClass.prototype){
+  func.prototype[i]=otherClass.prototype[i];
+ }
  // Overridden or new members
- extendObject(func.prototype,newMembers);
+ for(var j in newMembers){
+  func.prototype[j]=newMembers[j];
+ }
  // Add empty initialize if doesn't exist
  if(!func.prototype.initialize){
-  extendObject(func.prototype,{
-   initialize:function(){}
-  });
+  func.prototype.initialize=function(){};
  }
  func.prototype.constructor=func;
  return func;
@@ -345,7 +404,9 @@ window.eventDetails=function(e){
    target: target,
    type: (event ? event.type : "")
  };
- extendObject(o,eventDetailsFunc);
+ for(var i in eventDetailsFunc){
+  o[i]=eventDetailsFunc[i];
+ }
  // Mouse coordinates relative to object's position
  return o;
 };

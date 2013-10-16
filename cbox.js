@@ -542,6 +542,9 @@ var setPatternAndTitle=function(thisInput,usealpha){
       if(thisInput.getAttribute("rgbahex")!=="0"){
          patternother+="|[A-Fa-f0-9]{8,8}";
       }
+      if(usealpha){
+       patternother+="|[Tt][Rr][Aa][Nn][Ss][Pp][Aa][Rr][Ee][Nn][Tt]"
+      }
       pattern+=patternother;
       if(window.opera && supportsPattern()){
        // In Opera, use a faster pattern while focused, because Opera seems to verify the
@@ -617,13 +620,13 @@ initialize:function(info,parent,startingvalue,usealpha){
   this.pwidth=(this.padding*2)+(this.overalldims[0]*this.pixelWidth);
   this.pheight=(this.padding*2)+(this.overalldims[1]*this.pixelHeight);
   this.bgcolors=[];
-  if(this.p.style.position==="absolute")setPageX(this.p,this.adjustLeft(this.p,this.origPageX));
+  this.adjustPos();
   this.startx=(this.p.style.position==="absolute") ? 0 : getPageX(this.p);
   this.starty=(this.p.style.position==="absolute") ? 0 : getPageY(this.p);
   this.endx=this.startx+this.pwidth;
   this.endy=this.starty+this.pheight;
   this.p.style.border="1px solid black";
-  this.p.style.zIndex=100;
+  this.p.style.zIndex=1000;
   try { this.p.style.borderRadius=this.padding+"px" ; }catch(ex){}
   this.p.style.backgroundColor="white";
   this.p.style.width=this.pwidth+"px";
@@ -800,7 +803,7 @@ initialize:function(info,parent,startingvalue,usealpha){
    }
    if(!this.usealpha)this.cursors[2].style.display="none";
    this.currentArea=0;
-   if(this.p.style.position==="absolute")setPageX(this.p,this.adjustLeft(this.p,this.origPageX));
+   this.adjustPos();
    this.pagex=getPageX(tbl) ; // get page X again since table's x may have changed
    this.startx=(this.p.style.position==="absolute") ? 0 : getPageX(this.p);
    this.starty=(this.p.style.position==="absolute") ? 0 : getPageY(this.p);
@@ -878,18 +881,29 @@ updateHueSlider:function(o,current){
     ];
     return applyCssGradient(this.hueslider,huecolors);
 },
-adjustLeft:function(p,startPos){
-   if("clientWidth" in document.body){
-      var cw=document.body.clientWidth;
-      return Math.min(cw-getWidth(p),startPos);
-   }
-   return startPos;
-},
+adjustPos:function(){
+   if(this.p.style.position==="absolute"){
+    var viewport=getViewport();
+    var height=getHeight(this.p);
+    var clw=Math.min(viewport.width-getWidth(this.p),this.origPageX);
+    setPageX(this.p,clw);
+    if(this.origPageY+height>viewport.top+viewport.height){
+      setPageY(this.p,this.origPageY-20-height);
+    } else {
+      setPageY(this.p,this.origPageY); 
+    }
+    this.pagex=getPageX(this.tbl) ;// get page X again since table's x may have changed
+    this.pagey=getPageY(this.tbl) ;// get page Y again since table's y may have changed
+   }},
 windowResize:function(){
-  if(this.p.style.position==="absolute")setPageX(this.p,this.adjustLeft(this.p,this.origPageX));
-  this.startx=(this.p.style.position==="absolute") ? 0 : getPageX(this.p);
-  this.starty=(this.p.style.position==="absolute") ? 0 : getPageY(this.p);
-  this.pagex=getPageX(this.tbl) ;// get page X again since table's x may have changed
+  this.adjustPos();
+  if(this.p.style.position!=="absolute"){
+   this.startx=getPageX(this.p);
+   this.starty=getPageY(this.p);
+  } else {
+   this.startx=0;
+   this.starty=0;
+  }
   this.endx=this.startx+this.pwidth;
   this.endy=this.starty+this.pheight;
   this.readjustpos(this.current);
@@ -1289,6 +1303,24 @@ documentMouseMove:function(e){
        }
    };
   }
+  rootobj.setUpColoredInputButton=function(thisInput,extra,newInput){
+     var chgfunc=function(newInput,thisInput,useAlpha){
+      return function(){
+          //console.log([thisInput.id,thisInput.value,"I"])
+          var c=rootobj.getRgba(thisInput);
+          coloredInput(thisInput,newInput);
+          colorChangeEvent.trigger(c,thisInput);
+          return true;
+     };};
+     var changefunc=chgfunc(newInput,thisInput,extra.usealpha);
+     // because of suggestions, use "input" instead of "keyup" if
+     // supported by the browser (IE9 supports input only partially;
+     // backspace doesn't trigger the input event)
+     addListener(thisInput,("oninput" in thisInput && !ieversionorbelow(9)) ?
+      "input" : "keyup",changefunc);
+     addListener(thisInput,"change",changefunc);
+     return newInput;
+  };
   rootobj.createColorPickerButton=function(thisInput,extra){
      var usealpha=extra.usealpha;
      var newInput=document.createElement("input");
@@ -1302,27 +1334,16 @@ documentMouseMove:function(e){
      newInput.id=bidstring;
      thisInput.parentNode.insertBefore(newInput,thisInput);
      removeFilter(newInput,"gradient");// try again in case filter wasn't removed
-     var chgfunc=function(newInput,thisInput,useAlpha){
-      return function(){
-          //console.log([thisInput.id,thisInput.value,"I"])
-          var c=rootobj.getRgba(thisInput);
-          coloredInput(thisInput,newInput);
-          colorChangeEvent.trigger(c,thisInput);
-     };};
-     var changefunc=chgfunc(newInput,thisInput,usealpha);
-     // because of suggestions, use "input" instead of "keyup" if
-     // supported by the browser (IE9 supports input only partially;
-     // backspace doesn't trigger the input event)
-     addListener(thisInput,("oninput" in thisInput && !ieversionorbelow(9)) ?
-      "input" : "keyup",changefunc);
-     addListener(thisInput,"change",changefunc);
-     return newInput;
+     return rootobj.setUpColoredInputButton(thisInput,extra,newInput);
   };
   rootobj.setColorPicker=function(thisInput,extra){
      if(!extra)extra={};
-     var newInput;
+     var newInput=null;
      var newextra={
       flat: ("flat" in extra) ? extra.flat : false,
+      // Don't show a button. Instead, clicking the input
+      // box calls up the color picker box.
+      nobutton: ("nobutton" in extra) ? extra.nobutton : false,
       argbhex: ("argbhex" in extra) ? extra.argbhex : false,
       rgbahex: ("rgbahex" in extra) ? extra.rgbahex : false,
       usealpha: ("usealpha" in extra) ? extra.usealpha : false,
@@ -1341,7 +1362,9 @@ documentMouseMove:function(e){
       thisInput.style.display="none";
       onNewInputClickFunction(newInput,thisInput,extra)();
      } else {
-      newInput=rootobj.createColorPickerButton(thisInput,extra.usealpha);
+      newInput=(extra.nobutton) ? 
+        rootobj.setUpColoredInputButton(thisInput,extra,thisInput) :
+        rootobj.createColorPickerButton(thisInput,extra);
       addListener(newInput,"click",onNewInputClickFunction(newInput,thisInput,extra));
      }
   };
