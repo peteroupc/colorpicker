@@ -1,6 +1,10 @@
 Color Picker
 ===========
 
+If you like this software, consider donating to me at this link: http://upokecenter.dreamhosters.com/articles/donate-now-2/
+
+----
+
 Written by Peter O. in 2012/2013. http://upokecenter.dreamhosters.com/
 
 A color picker in JavaScript. Supports adapters for integrating other popular color pickers, and can use native color selection controls. In the public domain under CC0.
@@ -9,7 +13,13 @@ A color picker in JavaScript. Supports adapters for integrating other popular co
 
 If you like this, consider donating to me to help pay my loans and other costs:
 
-http://upokecenter.dreamhosters.com/d
+http://upokecenter.dreamhosters.com/articles/donate-now-2/
+
+## Demo
+
+See: http://peteroupc.github.io/colorpicker/demo.html
+
+The homepage is: http://peteroupc.github.io/colorpicker
 
 ## How to use:
 
