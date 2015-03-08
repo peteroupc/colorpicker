@@ -1,11 +1,11 @@
 Color Picker
 ===========
 
-If you like this software, consider donating to me at this link: http://upokecenter.dreamhosters.com/articles/donate-now-2/
+If you like this software, consider donating to me at this link: [http://upokecenter.dreamhosters.com/articles/donate-now-2/](http://upokecenter.dreamhosters.com/articles/donate-now-2/)
 
 ----
 
-Written by Peter O. in 2012/2013. http://upokecenter.dreamhosters.com/
+Written by Peter O. in 2012/2013. [http://upokecenter.dreamhosters.com/](http://upokecenter.dreamhosters.com/)
 
 A color picker in JavaScript. Supports adapters for integrating other popular color pickers, and can use native color selection controls. In the public domain under CC0.
 
@@ -13,13 +13,13 @@ A color picker in JavaScript. Supports adapters for integrating other popular co
 
 If you like this, consider donating to me to help pay my loans and other costs:
 
-http://upokecenter.dreamhosters.com/articles/donate-now-2/
+[http://upokecenter.dreamhosters.com/articles/donate-now-2/](http://upokecenter.dreamhosters.com/articles/donate-now-2/)
 
 ## Demo
 
-See: http://peteroupc.github.io/colorpicker/demo.html
+See: [http://peteroupc.github.io/colorpicker/demo.html](http://peteroupc.github.io/colorpicker/demo.html)
 
-The homepage is: http://peteroupc.github.io/colorpicker
+The homepage is: [http://peteroupc.github.io/colorpicker](http://peteroupc.github.io/colorpicker)
 
 ## How to use:
 
@@ -97,7 +97,7 @@ _input_ and _extra_ have the same meaning as in ` addColorPickerAdapter()`. `but
 Every form sent to the server should be validated on the server side. The color boxes accept a wide variety of values for
 colors, which need to be validated and converted to a common format. Use the server-side scripts in another of my projects:
 
-https://github.com/peteroupc/colorvalidator
+[https://github.com/peteroupc/colorvalidator](https://github.com/peteroupc/colorvalidator)
 
 That project contains scripts for five popular server-side languages: PHP, Python, Ruby, C#, and Java. These scripts are
 also released to the public domain.
