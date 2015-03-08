@@ -6,7 +6,7 @@
    colorToRgba, subclass, colorToRgb, rgbToColorHtml, removeListener,
    addListener, addReadyListener, rgbaToColorRgba, rgbaToColorArgb,
    rgbToColorDisplay, colorRgbaToRgba, colorArgbToRgba, isRgbDark,
-   MethodBinder, eventDetails, 
+   MethodBinder, eventDetails,
    rgbToColorRgba, rgbToColorArgb */
 (function(window,rootobj){
   "use strict";
@@ -890,7 +890,7 @@ adjustPos:function(){
     if(this.origPageY+height>viewport.top+viewport.height){
       setPageY(this.p,this.origPageY-20-height);
     } else {
-      setPageY(this.p,this.origPageY); 
+      setPageY(this.p,this.origPageY);
     }
     this.pagex=getPageX(this.tbl) ;// get page X again since table's x may have changed
     this.pagey=getPageY(this.tbl) ;// get page Y again since table's y may have changed
@@ -1362,7 +1362,7 @@ documentMouseMove:function(e){
       thisInput.style.display="none";
       onNewInputClickFunction(newInput,thisInput,extra)();
      } else {
-      newInput=(extra.nobutton) ? 
+      newInput=(extra.nobutton) ?
         rootobj.setUpColoredInputButton(thisInput,extra,thisInput) :
         rootobj.createColorPickerButton(thisInput,extra);
       addListener(newInput,"click",onNewInputClickFunction(newInput,thisInput,extra));

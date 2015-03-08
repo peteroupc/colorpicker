@@ -178,8 +178,6 @@ if(!o)return;
   }
 }
 
-
-
 // Gets the visible rectangle of a Web page
 function getViewport(){
  "use strict";
@@ -207,7 +205,7 @@ function getViewport(){
  } else if(d.width){
       ret.width=d.width;
  }
- // exclude scrollbars, so check these items in order; 
+ // exclude scrollbars, so check these items in order;
  // document.documentElement.clientHeight contains
  // the best estimate of the viewport height
  if(dde && "clientHeight" in dde){
@@ -498,7 +496,6 @@ var hueval=hls[0]*1.0;//[0-360)
    (bl<0 ? 0 : (bl>255 ? 255 : bl))];
 }
 
-
 /* This file is in the public domain. Peter O., 2012. http://upokecenter.dreamhosters.com
     Public domain dedication: http://creativecommons.org/publicdomain/zero/1.0/  */
 // Converts a representation of a color to its RGB form
@@ -630,7 +627,6 @@ if((e=(/^([A-Fa-f0-9]{2})([A-Fa-f0-9]{2})([A-Fa-f0-9]{2})([A-Fa-f0-9]{2})$/.exec
  return colorToRgba(value);
 }
 
-
 function rgbToColorRgba(r,g,b,a){
  "use strict";
 if(!rgbToColorRgba.table){
@@ -692,8 +688,6 @@ function isRgbDark(rgb){
  "use strict";
 return((rgb[0]*299)+(rgb[1]*587)+(rgb[2]*114))/1000<=127.5;
 }
-
-
 
 colorToRgba.namedColorsPattern=function(){
  "use strict";
