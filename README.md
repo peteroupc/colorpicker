@@ -94,6 +94,12 @@ _input_ and _extra_ have the same meaning as in ` addColorPickerAdapter()`. `but
 PDColorPicker.doColorPreview( _input_, _extra_, _button_ ) - triggers the color preview event, using the current value of the color text box.
 _input_ and _extra_ have the same meaning as in ` addColorPickerAdapter()`. `button` should be the button returned from `createColorPickerButton`.
 
+## History
+
+Version 1.0
+
+- First CodeProject release
+
 ## Server-Side Processing
 
 Every form sent to the server should be validated on the server side. The color boxes accept a wide variety of values for
