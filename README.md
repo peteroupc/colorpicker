@@ -19,8 +19,8 @@ The homepage is: [http://peteroupc.github.io/colorpicker](http://peteroupc.githu
 
 In general, include the scripts "cbox.js" and "objlib.js" to your HTML:
 
-<script type="text/javascript" src="objlib.js"></script>
-<script type="text/javascript" src="cbox.js"></script>
+    <script type="text/javascript" src="objlib.js"></script>
+    <script type="text/javascript" src="cbox.js"></script>
 
 When the page is ready, it will convert certain textboxes into color pickers:
 
@@ -112,4 +112,3 @@ Any copyright is dedicated to the Public Domain.
 
 If you like this, you should donate to Peter O.
 at: [http://upokecenter.dreamhosters.com/articles/donate-now-2/](http://upokecenter.dreamhosters.com/articles/donate-now-2/)
-
