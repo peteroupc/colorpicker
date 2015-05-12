@@ -7,15 +7,7 @@ If you like this software, consider donating to me at this link: [http://upokece
 
 ----
 
-Written by Peter O. in 2012/2013. [http://upokecenter.dreamhosters.com/](http://upokecenter.dreamhosters.com/)
-
 A color picker in JavaScript. Supports adapters for integrating other popular color pickers, and can use native color selection controls. In the public domain under CC0.
-
-## Donate to me
-
-If you like this, consider donating to me to help pay my loans and other costs:
-
-[http://upokecenter.dreamhosters.com/articles/donate-now-2/](http://upokecenter.dreamhosters.com/articles/donate-now-2/)
 
 ## Demo
 
@@ -109,3 +101,15 @@ colors, which need to be validated and converted to a common format. Use the ser
 
 That project contains scripts for five popular server-side languages: PHP, Python, Ruby, C#, and Java. These scripts are
 also released to the public domain.
+
+About
+-----------
+
+Written in 2012-2015 by Peter O.
+
+Any copyright is dedicated to the Public Domain.
+[http://creativecommons.org/publicdomain/zero/1.0/](http://creativecommons.org/publicdomain/zero/1.0/)
+
+If you like this, you should donate to Peter O.
+at: [http://upokecenter.dreamhosters.com/articles/donate-now-2/](http://upokecenter.dreamhosters.com/articles/donate-now-2/)
+
